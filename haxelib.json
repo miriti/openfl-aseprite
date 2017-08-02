@@ -1,0 +1,14 @@
+{
+  "name": "openfl-aseprite",
+  "url" : "",
+  "license": "MIT",
+  "tags": ["animation", "openfl", "aseprite"],
+  "description": "Loads and manages sprites animated using Aseprite",
+  "version": "0.1.0",
+  "classPath": "src/",
+  "releasenote": "Initial release",
+  "contributors": ["Michael Miriti"],
+  "dependencies": {
+    "openfl": ""
+  }
+}
