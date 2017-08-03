@@ -52,12 +52,14 @@ class Aseprite extends Sprite {
   private var bitmap: Bitmap;
   private var currentFrameData(get, never): AsepriteFrame;
   private var currentFrameIndex(default, set): Int;
+  private var currentTag: AsepriteFrameTag = null;
   private var direction: Int = 1;
   private var frames: Array<AsepriteFrame> = [];
   private var frameTags: Map<String, AsepriteFrameTag> = new Map<String, AsepriteFrameTag>();
   private var frameTime: Int = 0;
-  private var currentTag: AsepriteFrameTag = null;
   private var lastTime: Null<Int> = null;
+  private var playing: Bool = false;
+  private var repeat: Int = 0;
 
   public var reverse: Bool = false;
   public var speed: Float = 1;
@@ -171,10 +173,35 @@ class Aseprite extends Sprite {
         currentTag = frameTags.get(tag);
         currentFrameIndex = currentTag.from;
         frameTime = 0;
+        repeat = 0;
+        playing = true;
+      } else {
+        trace('Tag <' + tag + '> does not exists!');
       }
     } else {
       currentFrameIndex = 0;
       frameTime = 0;
+      repeat = 0;
+      playing = true;
+    }
+  }
+
+  /**
+   * Play animation N times
+   */
+  public function playTimes(times: Int, tag: String = null) {
+    play(tag);
+    repeat = times;
+  }
+
+  private function segmentEnd() {
+    if(repeat != 0) {
+      repeat--;
+
+      if(repeat == 0) {
+        playing = false;
+        dispatchEvent(new AsepriteEvent(AsepriteEvent.STOPPED));
+      }
     }
   }
 
@@ -185,18 +212,22 @@ class Aseprite extends Sprite {
       // TODO pingpong
       if(nextFrameIndex > currentTag.to) {
         nextFrameIndex = currentTag.from;
+        segmentEnd();
       }
 
       if(nextFrameIndex < currentTag.from) {
         nextFrameIndex = currentTag.to;
+        segmentEnd();
       }
     } else {
       if(nextFrameIndex > frames.length - 1) {
         nextFrameIndex = 0;
+        segmentEnd();
       }
 
       if(nextFrameIndex < 0) {
         nextFrameIndex = frames.length - 1;
+        segmentEnd();
       }
     }
 
@@ -204,11 +235,13 @@ class Aseprite extends Sprite {
   }
 
   public function update(delta: Int) {
-    frameTime += delta;
+    if(playing) {
+      frameTime += delta;
 
-    if(frameTime >= currentFrameData.data.duration) {
-      frameTime = currentFrameData.data.duration - frameTime;
-      nextFrame();
+      if(frameTime >= currentFrameData.data.duration) {
+        frameTime = currentFrameData.data.duration - frameTime;
+        nextFrame();
+      }
     }
   }
 }
