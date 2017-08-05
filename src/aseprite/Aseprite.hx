@@ -51,7 +51,7 @@ class Aseprite extends Sprite {
 
   private var bitmap: Bitmap;
   private var currentFrameData(get, never): AsepriteFrame;
-  private var currentFrameIndex(default, set): Int;
+  private var currentFrameIndex(default, set): Int = -1;
   private var currentTag: AsepriteFrameTag = null;
   private var direction: Int = 1;
   private var frames: Array<AsepriteFrame> = [];
@@ -60,6 +60,7 @@ class Aseprite extends Sprite {
   private var lastTime: Null<Int> = null;
   private var playing: Bool = false;
   private var repeat: Int = 0;
+  private var frameCallbacks: Map<Int, Array<Void -> Void>> = new Map<Int, Array<Void -> Void>>();
 
   public var reverse: Bool = false;
   public var speed: Float = 1;
@@ -72,7 +73,15 @@ class Aseprite extends Sprite {
     if(value < 0) value = frames.length - 1;
     if(value > frames.length - 1) value = 0;
 
-    bitmap.bitmapData = frames[value].bitmapData;
+    if(value != currentFrameIndex) {
+      bitmap.bitmapData = frames[value].bitmapData;
+
+      if(frameCallbacks.exists(value)) {
+        for(callback in frameCallbacks.get(value)) {
+          callback();
+        }
+      }
+    }
     return currentFrameIndex = value;
   }
 
@@ -167,6 +176,25 @@ class Aseprite extends Sprite {
     lastTime = currentTime;
   }
 
+  /**
+   * Add a frame callback
+   */
+  public function addFrameCallback(frameNum: Int, callback: Void -> Void) {
+    if(!frameCallbacks.exists(frameNum)) {
+      frameCallbacks.set(frameNum, new Array<Void -> Void>());
+    }
+    frameCallbacks.get(frameNum).push(callback);
+  }
+
+  /**
+   * Remove a frame callback
+   */
+  public function removeFrameCallback(frameNum: Int, callback: Void -> Void) {
+    if(frameCallbacks.exists(frameNum)) {
+      frameCallbacks.get(frameNum).remove(callback);
+    }
+  }
+
   public function play(tag: String = null) {
     if(tag != null) {
       if(frameTags.exists(tag)) {
@@ -194,40 +222,59 @@ class Aseprite extends Sprite {
     repeat = times;
   }
 
-  private function segmentEnd() {
+  private function segmentEnd():Bool {
     if(repeat != 0) {
       repeat--;
 
       if(repeat == 0) {
         playing = false;
         dispatchEvent(new AsepriteEvent(AsepriteEvent.STOPPED));
+        return false;
       }
     }
+
+    return true;
   }
 
+  // TODO: Fully rebuild this
   private function nextFrame() {
     var nextFrameIndex = currentFrameIndex + (direction * (reverse ? -1 : 1));
 
     if(currentTag != null) {
       // TODO pingpong
       if(nextFrameIndex > currentTag.to) {
-        nextFrameIndex = currentTag.from;
-        segmentEnd();
+        if(segmentEnd()) {
+          nextFrameIndex = currentTag.from;
+        } else {
+          return;
+        }
       }
 
       if(nextFrameIndex < currentTag.from) {
-        nextFrameIndex = currentTag.to;
-        segmentEnd();
+        if(segmentEnd()) {
+          nextFrameIndex = currentTag.to;
+        } else {
+          return;
+        }
+
       }
     } else {
       if(nextFrameIndex > frames.length - 1) {
-        nextFrameIndex = 0;
-        segmentEnd();
+        if(segmentEnd()) {
+          nextFrameIndex = 0;
+        } else {
+          return;
+        }
+
       }
 
       if(nextFrameIndex < 0) {
-        nextFrameIndex = frames.length - 1;
-        segmentEnd();
+        if(segmentEnd()) {
+          nextFrameIndex = frames.length - 1;
+        } else {
+          return;
+        }
+
       }
     }
 
