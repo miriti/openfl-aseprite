@@ -46,6 +46,9 @@ typedef AsepriteFrameTag = {
   direction: String
 };
 
+/**
+  Aseprite class loads and parses json files created by Aseprite (https://www.aseprite.org/)
+**/
 class Aseprite extends Sprite {
   public static var enterFrameEvent: Bool = true;
 
@@ -54,14 +57,14 @@ class Aseprite extends Sprite {
   private var currentFrameIndex(default, set): Int = -1;
   private var currentTag: AsepriteFrameTag = null;
   private var direction: Int = 1;
+  private var frameCallbacks: Map<Int, Array<Void -> Void>> = new Map<Int, Array<Void -> Void>>();
   private var frames: Array<AsepriteFrame> = [];
   private var frameTags: Map<String, AsepriteFrameTag> = new Map<String, AsepriteFrameTag>();
   private var frameTime: Int = 0;
   private var lastTime: Null<Int> = null;
-  private var playing: Bool = false;
   private var repeat: Int = 0;
-  private var frameCallbacks: Map<Int, Array<Void -> Void>> = new Map<Int, Array<Void -> Void>>();
 
+  public var playing: Bool = false;
   public var reverse: Bool = false;
   public var speed: Float = 1;
 
@@ -220,6 +223,14 @@ class Aseprite extends Sprite {
   public function playTimes(times: Int, tag: String = null) {
     play(tag);
     repeat = times;
+  }
+
+  public function pause() {
+    playing = false;
+  }
+
+  public function resume() {
+    playing = true;
   }
 
   private function segmentEnd():Bool {
