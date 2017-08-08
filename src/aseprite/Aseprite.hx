@@ -63,6 +63,7 @@ class Aseprite extends Sprite {
   private var frameTime: Int = 0;
   private var lastTime: Null<Int> = null;
   private var repeat: Int = 0;
+  private var stopCallback: Void -> Void = null;
 
   public var playing: Bool = false;
   public var reverse: Bool = false;
@@ -218,11 +219,16 @@ class Aseprite extends Sprite {
   }
 
   /**
-   * Play animation N times
+      Play animation number of times
+     
+      @param times Number of times to play the animation
+      @param tag  Tag to play
+      @param callback If set will be called as soon as the last play time will be finished
    */
-  public function playTimes(times: Int, tag: String = null) {
+  public function playTimes(times: Int, tag: String = null, callback: Void -> Void = null) {
     play(tag);
     repeat = times;
+    stopCallback = callback;
   }
 
   public function pause() {
@@ -239,6 +245,9 @@ class Aseprite extends Sprite {
 
       if(repeat == 0) {
         playing = false;
+        if(stopCallback != null) {
+          stopCallback();
+        }
         dispatchEvent(new AsepriteEvent(AsepriteEvent.STOPPED));
         return false;
       }
