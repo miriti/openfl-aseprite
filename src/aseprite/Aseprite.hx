@@ -54,7 +54,6 @@ class Aseprite extends Sprite {
 
   private var bitmap: Bitmap;
   private var currentFrameData(get, never): AsepriteFrame;
-  private var currentFrameIndex(default, set): Int = -1;
   private var currentTag: AsepriteFrameTag = null;
   private var direction: Int = 1;
   private var frameCallbacks: Map<Int, Array<Void -> Void>> = new Map<Int, Array<Void -> Void>>();
@@ -65,6 +64,7 @@ class Aseprite extends Sprite {
   private var repeat: Int = 0;
   private var stopCallback: Void -> Void = null;
 
+  public var currentFrameIndex(default, set): Int = -1;
   public var playing: Bool = false;
   public var reverse: Bool = false;
   public var speed: Float = 1;
@@ -162,10 +162,8 @@ class Aseprite extends Sprite {
       frameTags.set(tag.name, tag);
     }
 
-    if(tags.length > 0) {
-      play(tags[0].name);
-    } else {
-      play();
+    if(frames.length > 0) {
+      currentFrameIndex = 0;
     }
   }
 
