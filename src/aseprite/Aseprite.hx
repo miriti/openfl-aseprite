@@ -48,7 +48,7 @@ typedef AsepriteFrameTag = {
 
 /**
   Aseprite class loads and parses json files created by Aseprite (https://www.aseprite.org/)
-**/
+ **/
 class Aseprite extends Sprite {
   public static var enterFrameEvent: Bool = true;
 
@@ -67,7 +67,7 @@ class Aseprite extends Sprite {
   public var currentFrameIndex(default, set): Int = -1;
   public var playing: Bool = false;
   public var reverse: Bool = false;
-  public var speed: Float = 1;
+  public var speed: Float = 1.0;
 
   private function get_currentFrameData(): AsepriteFrame {
     return frames[currentFrameIndex];
@@ -79,6 +79,8 @@ class Aseprite extends Sprite {
 
     if(value != currentFrameIndex) {
       bitmap.bitmapData = frames[value].bitmapData;
+      currentFrameIndex = value;
+      dispatchEvent(new AsepriteEvent(AsepriteEvent.FRAME_CHANGE));
 
       if(frameCallbacks.exists(value)) {
         for(callback in frameCallbacks.get(value)) {
@@ -86,7 +88,8 @@ class Aseprite extends Sprite {
         }
       }
     }
-    return currentFrameIndex = value;
+
+    return currentFrameIndex;
   }
 
   public function new(jsonAssetName: String, bitmapAssetName: String = null) {
@@ -217,11 +220,11 @@ class Aseprite extends Sprite {
   }
 
   /**
-      Play animation number of times
-     
-      @param times Number of times to play the animation
-      @param tag  Tag to play
-      @param callback If set will be called as soon as the last play time will be finished
+    Play animation number of times
+
+    @param times Number of times to play the animation
+    @param tag  Tag to play
+    @param callback If set will be called as soon as the last play time will be finished
    */
   public function playTimes(times: Int, tag: String = null, callback: Void -> Void = null) {
     play(tag);
@@ -301,7 +304,7 @@ class Aseprite extends Sprite {
 
   public function update(delta: Int) {
     if(playing) {
-      frameTime += delta;
+      frameTime += Math.round(delta * speed);
 
       if(frameTime >= currentFrameData.data.duration) {
         frameTime = currentFrameData.data.duration - frameTime;
