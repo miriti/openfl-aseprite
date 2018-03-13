@@ -58,13 +58,13 @@ class Aseprite extends Sprite {
   private var frameCallbacks: Map<Int, Array<Void -> Void>> = new Map<Int, Array<Void -> Void>>();
   private var frames: Array<AsepriteFrame> = [];
   private var frameTags: Map<String, AsepriteFrameTag> = new Map<String, AsepriteFrameTag>();
-  private var frameTime: Int = 0;
   private var lastTime: Null<Int> = null;
   private var repeat: Int = 0;
   private var stopCallback: Void -> Void = null;
 
-  public var currentTag: AsepriteFrameTag = null;
   public var currentFrameIndex(default, set): Int = -1;
+  public var currentTag: AsepriteFrameTag = null;
+  public var frameTime: Int = 0;
   public var playing: Bool = false;
   public var reverse: Bool = false;
   public var speed: Float = 1.0;
@@ -92,7 +92,7 @@ class Aseprite extends Sprite {
     return currentFrameIndex;
   }
 
-  public function new(jsonAssetName: String, bitmapAssetName: String = null) {
+  public function new(jsonAssetName: String, bitmapAssetName: String = null, autoPlay: Bool = false) {
     super();
 
     if(bitmapAssetName == null) {
@@ -117,6 +117,10 @@ class Aseprite extends Sprite {
 
     if(enterFrameEvent) {
       addEventListener(Event.ENTER_FRAME, onEnterFrame);
+    }
+
+    if(autoPlay) {
+      play();
     }
   }
 
