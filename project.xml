@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<project>
+
+    <meta title="OpenFL Aseprite Test" package="com.michaelmiriti.openfl.aseprite" version="1.0.0" company="Michael Miriti" />
+    <app main="Main" path="bin/test" file="openfl-aseprite" />
+
+    <assets path="testAssets" />
+
+    <source path="test" />
+    <source path="src" />
+
+    <haxelib name="ase" />
+    <haxelib name="openfl" />
+
+    <window resizable="false" />
+</project>
