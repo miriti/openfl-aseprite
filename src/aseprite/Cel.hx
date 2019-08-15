@@ -1,5 +1,6 @@
 package aseprite;
 
+import haxe.Int32;
 import haxe.io.Bytes;
 import haxe.io.BytesInput;
 import openfl.display.Bitmap;
@@ -19,22 +20,23 @@ class Cel extends Sprite {
       for (col in 0...celChunk.width) {
         switch (sprite.asepriteFile.header.colorDepth) {
           case 32:
-            bitmapData.setPixel32(col, row, pixelInput.readInt32());
+            bitmapData.setPixel32(col, row, Color.rgba2argb(pixelInput.read(4)));
           case 16:
-            var pixel:Bytes = pixelInput.read(2);
-            var rgba:Bytes = Bytes.alloc(4);
-            rgba.set(0, pixel.get(0));
-            rgba.set(1, pixel.get(0));
-            rgba.set(2, pixel.get(0));
-            rgba.set(3, pixel.get(1));
-            bitmapData.setPixel32(col, row, rgba.getInt32(0));
+            bitmapData.setPixel32(col, row, Color.grayscale2argb(pixelInput.read(2)));
           case 8:
-            trace(8);
+            var index:Int = pixelInput.readByte();
+            var color:Null<Int32> = Color.indexed2argb(sprite, index);
+            if (color != null) {
+              bitmapData.setPixel32(col, row, color);
+            }
         }
       }
     }
     bitmapData.unlock();
 
     addChild(new Bitmap(bitmapData));
+
+    x = celChunk.xPosition;
+    y = celChunk.yPosition;
   }
 }

@@ -10,9 +10,19 @@ class Main extends Sprite {
   public function new() {
     super();
 
-    var bytes:Bytes = Assets.getBytes('testAssets/128x128_rgba.aseprite');
-    var grayscale:Bytes = Assets.getBytes('testAssets/grayscale.aseprite');
+    var datas = [
+      Assets.getBytes('testAssets/128x128_rgba.aseprite'),
+      Assets.getBytes('testAssets/grayscale.aseprite'),
+      Assets.getBytes('testAssets/indexed_multi_layer.aseprite')
+    ];
 
-    addChild(new AsepriteSprite(grayscale));
+    var nextX:Float = 0;
+
+    for (data in datas) {
+      var sprite:AsepriteSprite = new AsepriteSprite(data);
+      sprite.x = nextX;
+      nextX += sprite.width;
+      addChild(sprite);
+    }
   }
 }
