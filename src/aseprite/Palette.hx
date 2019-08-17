@@ -1,16 +1,15 @@
 package aseprite;
 
 import haxe.io.Bytes;
-import haxe.Int32;
 import ase.chunks.PaletteChunk;
 
 class Palette {
   private var _chunk:PaletteChunk;
-  private var _entries:Map<Int, Int32> = [];
+  private var _entries:Map<Int, UInt> = [];
 
-  public var entries(get, never):Map<Int, Int32>;
+  public var entries(get, never):Map<Int, UInt>;
 
-  function get_entries():Map<Int, Int32> {
+  function get_entries():Map<Int, UInt> {
     return _entries;
   }
 

@@ -1,42 +1,47 @@
 package aseprite;
 
-import haxe.Int32;
-import haxe.io.Bytes;
-import haxe.io.BytesInput;
-import openfl.display.Bitmap;
-import openfl.display.BitmapData;
 import ase.chunks.CelChunk;
-import flash.display.Sprite;
+import haxe.io.BytesInput;
+import openfl.display.BitmapData;
 
-class Cel extends Sprite {
+class Cel extends BitmapData {
+  private var _chunk:CelChunk;
+
+  public var chunk(get, never):CelChunk;
+
+  function get_chunk():CelChunk {
+    return _chunk;
+  }
+
   public function new(sprite:AsepriteSprite, celChunk:CelChunk) {
-    super();
+    super(celChunk.width, celChunk.height);
 
-    var bitmapData:BitmapData = new BitmapData(celChunk.width, celChunk.height);
+    _chunk = celChunk;
+
     var pixelInput:BytesInput = new BytesInput(celChunk.rawData);
 
-    bitmapData.lock();
+    lock();
+
     for (row in 0...celChunk.height) {
       for (col in 0...celChunk.width) {
-        switch (sprite.asepriteFile.header.colorDepth) {
+        var pixelValue:Null<UInt> = null;
+
+        switch (sprite.aseprite.header.colorDepth) {
           case 32:
-            bitmapData.setPixel32(col, row, Color.rgba2argb(pixelInput.read(4)));
+            pixelValue = Color.rgba2argb(pixelInput.read(4));
           case 16:
-            bitmapData.setPixel32(col, row, Color.grayscale2argb(pixelInput.read(2)));
+            pixelValue = Color.grayscale2argb(pixelInput.read(2));
           case 8:
             var index:Int = pixelInput.readByte();
-            var color:Null<Int32> = Color.indexed2argb(sprite, index);
-            if (color != null) {
-              bitmapData.setPixel32(col, row, color);
-            }
+            pixelValue = Color.indexed2argb(sprite, index);
+        }
+
+        if (pixelValue != null) {
+          setPixel32(col, row, pixelValue);
         }
       }
     }
-    bitmapData.unlock();
 
-    addChild(new Bitmap(bitmapData));
-
-    x = celChunk.xPosition;
-    y = celChunk.yPosition;
+    unlock();
   }
 }

@@ -12,5 +12,5 @@
     <haxelib name="ase" />
     <haxelib name="openfl" />
 
-    <window resizable="false" />
+    <window width="1024" height="800" resizable="false" fps="30" />
 </project>
