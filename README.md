@@ -1,11 +1,19 @@
 # OpenFL Aseprite
 
-Load and render sprites and animations in Aseprite format. Base on [ase](https://github.com/miriti/ase) library.
+Load and render sprites and animations in Aseprite format. Based on [ase](https://github.com/miriti/ase) library.
 
 ## Installation
 
+1. Install the library via `haxelib`:
+
 ```
 haxelib install openfl-aseprite
+```
+
+2. Add this line to the `project.xml` file:
+
+```xml
+ <haxelib name="openfl-aseprite" />
 ```
 
 ## Usage
@@ -76,6 +84,7 @@ Play the animation
 ## TODO
 
 - [ ] Tags
+- [ ] Slices
 - [ ] Color profile
 - [ ] Support all the bland modes
 
