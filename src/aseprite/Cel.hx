@@ -20,6 +20,7 @@ class Cel extends BitmapData {
 
     var pixelInput:BytesInput = new BytesInput(celChunk.rawData);
 
+    // TODO: This definitely can be optimized
     lock();
 
     for (row in 0...celChunk.height) {

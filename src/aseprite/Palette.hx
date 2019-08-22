@@ -1,7 +1,7 @@
 package aseprite;
 
-import haxe.io.Bytes;
 import ase.chunks.PaletteChunk;
+import haxe.io.Bytes;
 
 class Palette {
   private var _chunk:PaletteChunk;

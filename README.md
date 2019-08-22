@@ -1,5 +1,7 @@
 # OpenFL Aseprite
 
+**WORK IN PROGRESS**
+
 Load and render sprites and animations in Aseprite format. Based on [ase](https://github.com/miriti/ase) library.
 
 ## Installation
@@ -86,11 +88,12 @@ Play the animation
 - [ ] Tags
 - [ ] Slices
 - [ ] Color profile
+- [ ] Optimization
 - [ ] Support all the bland modes
 
 ## Authors
 
-- Michael Miriti @miriti <m.s.miriti@gmail.com>
+- Michael Miriti (github: @miriti, email: m.s.miriti@gmail.com, twitter: @michael_miriti)
 
 ## License
 

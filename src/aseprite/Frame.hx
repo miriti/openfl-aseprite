@@ -1,15 +1,14 @@
 package aseprite;
 
-import openfl.display.BlendMode;
-import ase.chunks.LayerFlags;
-import ase.chunks.CelType;
-import aseprite.Cel;
 import ase.chunks.CelChunk;
+import ase.chunks.CelType;
 import ase.chunks.ChunkType;
 import ase.chunks.LayerChunk;
-import ase.Frame;
+import ase.chunks.LayerFlags;
+import aseprite.Cel;
 import openfl.display.Bitmap;
 import openfl.display.BitmapData;
+import openfl.display.BlendMode;
 import openfl.geom.Matrix;
 
 typedef LayerDef = {
@@ -17,7 +16,7 @@ typedef LayerDef = {
   cel:Cel
 };
 
-class AsepriteFrame extends Bitmap {
+class Frame extends Bitmap {
   public var duration(get, never):Int;
 
   function get_duration():Int {
@@ -34,9 +33,9 @@ class AsepriteFrame extends Bitmap {
 
   public var startTime:Int;
 
-  private var _frame:Frame;
+  private var _frame:ase.Frame;
 
-  public function new(sprite:AsepriteSprite, frame:Frame) {
+  public function new(sprite:AsepriteSprite, frame:ase.Frame) {
     _frame = frame;
 
     var bitmapData:BitmapData = new BitmapData(sprite.aseprite.header.width, sprite.aseprite.header.height);
@@ -61,6 +60,7 @@ class AsepriteFrame extends Bitmap {
 
       for (layer in _layers) {
         if (layer.cel != null && (layer.layerChunk.flags & LayerFlags.VISIBLE != 0)) {
+          // TODO: Implement all the blendModes
           var blendModes:Array<BlendMode> = [
             NORMAL, // 0 - Normal
             MULTIPLY, // 1 - Multiply
