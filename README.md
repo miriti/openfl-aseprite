@@ -20,7 +20,7 @@ haxelib install openfl-aseprite
 
 ## Usage
 
-The main class of the library (`ase.AsepriteSprite`) extends `openfl.display.Sprite` so you can use it just like any other OpenFL sprite.
+The main class of the library (`aseprite.AsepriteSprite`) extends `openfl.display.Sprite` so you can use it just like any other OpenFL sprite.
 
 To create an `AsepriteSprite` pass `Bytes` of an .ase/.aseprite file to its constructor:
 
@@ -47,7 +47,7 @@ The constructor has two optional parameters:
 
 #### `aseprite`
 
-An instance of the `ase.Aseprite` class
+An instance of the [`ase.Aseprite`](https://github.com/miriti/ase) class
 
 #### `currentFrame`
 
@@ -83,9 +83,10 @@ If set to `true` will use `Event.ENTER_FRAME` event to progress animation. Other
 
 Play the animation
 
+### Tags
+
 ## TODO
 
-- [ ] Tags
 - [ ] Slices
 - [ ] Color profile
 - [ ] Optimization
