@@ -16,6 +16,9 @@ typedef LayerDef = {
   cel:Cel
 };
 
+/**
+  A single frame in the animation
+**/
 class Frame extends Bitmap {
   public var duration(get, never):Int;
 

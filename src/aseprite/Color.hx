@@ -2,6 +2,9 @@ package aseprite;
 
 import haxe.io.Bytes;
 
+/**
+  Static functions for color manipulations
+**/
 class Color {
   public static function rgba2argb(rgba:Bytes):UInt {
     var argb:Bytes = Bytes.alloc(4);

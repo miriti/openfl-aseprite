@@ -1,0 +1,11 @@
+-cp ../src
+-lib ase
+-lib openfl
+--no-output
+ImportAll
+-D doc-gen
+-xml ../bin/doc/all.xml
+-neko dummy.n
+
+--next
+-cmd haxelib run dox -i ../bin/doc/ -in aseprite -o ../documentation

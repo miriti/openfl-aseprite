@@ -21,6 +21,11 @@ class AsepriteSprite extends Sprite {
   private var _layers:Array<LayerChunk> = [];
   private var _palette:Palette;
   private var _playing:Bool = false;
+
+  private var _spriteLayers = {
+    background: new Sprite(),
+    image: new Sprite()
+  };
   private var _tag:Map<String, Tag> = [];
   private var _tags:Array<Tag> = [];
 
@@ -36,7 +41,7 @@ class AsepriteSprite extends Sprite {
   /**
     Parsed Aseprite file data
   **/
-  @:isVar public var aseprite(default, set):Aseprite;
+  public var aseprite(default, set):Aseprite;
 
   function set_aseprite(value:Aseprite):Aseprite {
     if (value != aseprite) {
@@ -79,7 +84,7 @@ class AsepriteSprite extends Sprite {
         newFrame.startTime = _duration;
         _duration += newFrame.duration;
         _frames.push(newFrame);
-        addChild(newFrame);
+        _spriteLayers.image.addChild(newFrame);
       }
 
       _frames[0].visible = true;
@@ -90,16 +95,21 @@ class AsepriteSprite extends Sprite {
     return aseprite;
   }
 
-  public var backgroundColor(default, set):Null<Int>;
+  /**
+    Background color of the sprite. `null` for transparend
+
+    @default null
+  **/
+  public var backgroundColor(default, set):Null<Int> = null;
 
   function set_backgroundColor(value:Null<Int>):Null<Int> {
     if (aseprite != null) {
       if (value != null) {
-        graphics.beginFill(backgroundColor);
-        graphics.drawRect(0, 0, aseprite.header.width, aseprite.header.height);
-        graphics.endFill();
+        _spriteLayers.background.graphics.beginFill(backgroundColor);
+        _spriteLayers.background.graphics.drawRect(0, 0, aseprite.header.width, aseprite.header.height);
+        _spriteLayers.background.graphics.endFill();
       } else {
-        graphics.clear();
+        _spriteLayers.background.graphics.clear();
       }
     }
     return backgroundColor = value;
@@ -128,6 +138,8 @@ class AsepriteSprite extends Sprite {
 
   /**
     Current playing tag. Set to `null` in order to reset
+
+    @default null
   **/
   public var currentTag(default, set):String = null;
 
@@ -173,12 +185,12 @@ class AsepriteSprite extends Sprite {
   /**
     Whether the the Sprite should be masked or not
   **/
-  @:isVar public var masked(default, set):Bool;
+  public var masked(default, set):Bool;
 
   function set_masked(value:Bool) {
     if (masked && !value) {
-      removeChild(mask);
-      mask = null;
+      _spriteLayers.image.removeChild(mask);
+      _spriteLayers.image.mask = null;
     }
 
     if (!masked && value) {
@@ -187,8 +199,8 @@ class AsepriteSprite extends Sprite {
         _mask.graphics.beginFill(0x0);
         _mask.graphics.drawRect(0, 0, aseprite.header.width, aseprite.header.height);
         _mask.graphics.endFill();
-        mask = _mask;
-        addChild(_mask);
+        _spriteLayers.image.mask = _mask;
+        _spriteLayers.image.addChild(_mask);
       }
     }
     return masked = value;
@@ -260,6 +272,15 @@ class AsepriteSprite extends Sprite {
     return useEnterFrame = value;
   }
 
+  /**
+    Constructs an `AsepriteSprite` from an `Aseprite` instance, `masked` and
+    `backgroundColor` parameters
+
+    @param aseprite        `Aseprite` instance
+    @param masked          Whether or not the sprite should be masked to hide the
+                           content outside of the sprites bounds
+    @param backgroundColor Background color of the sprite (null for transparent)
+  **/
   public static function construct(aseprite:Aseprite, ?masked:Bool,
       ?backgroundColor:Int):AsepriteSprite {
     var asepriteSprite:AsepriteSprite = new AsepriteSprite();
@@ -298,8 +319,10 @@ class AsepriteSprite extends Sprite {
   /**
     Constructor
   **/
-  public function new() {
+  private function new() {
     super();
+    addChild(_spriteLayers.background);
+    addChild(_spriteLayers.image);
     addEventListener(Event.ADDED_TO_STAGE, onAddedToStage);
   }
 
@@ -317,6 +340,8 @@ class AsepriteSprite extends Sprite {
     @param tagName Name of the tag to play
   **/
   public function play(?tagName:String):AsepriteSprite {
+    if (tagName != null)
+      currentTag = tagName;
     _playing = true;
     return this;
   }

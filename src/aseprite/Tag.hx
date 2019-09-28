@@ -3,7 +3,7 @@ package aseprite;
 import ase.chunks.FrameTagsChunk.FrameTag;
 
 /**
-  Holds information in regard to frame tag
+  Holds information regarding a frame tag
 **/
 class Tag {
   private var _data:FrameTag;

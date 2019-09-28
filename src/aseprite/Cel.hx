@@ -4,6 +4,11 @@ import ase.chunks.CelChunk;
 import haxe.io.BytesInput;
 import openfl.display.BitmapData;
 
+using aseprite.Color;
+
+/**
+  A single "Cel" that holds the pixel data of a frame on a layer
+**/
 class Cel extends BitmapData {
   private var _chunk:CelChunk;
 
@@ -29,12 +34,12 @@ class Cel extends BitmapData {
 
         switch (sprite.aseprite.header.colorDepth) {
           case 32:
-            pixelValue = Color.rgba2argb(pixelInput.read(4));
+            pixelValue = pixelInput.read(4).rgba2argb();
           case 16:
-            pixelValue = Color.grayscale2argb(pixelInput.read(2));
+            pixelValue = pixelInput.read(2).grayscale2argb();
           case 8:
             var index:Int = pixelInput.readByte();
-            pixelValue = Color.indexed2argb(sprite, index);
+            pixelValue = sprite.indexed2argb(index);
         }
 
         if (pixelValue != null) {
