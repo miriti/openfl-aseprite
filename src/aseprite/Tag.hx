@@ -8,6 +8,12 @@ import ase.chunks.FrameTagsChunk.FrameTag;
 class Tag {
   private var _data:FrameTag;
 
+  public var data(get, never):FrameTag;
+
+  function get_data():FrameTag {
+    return _data;
+  }
+
   /**
     Name of the tag
   **/

@@ -1,33 +1,36 @@
 package aseprite;
 
 import ase.Aseprite;
+import ase.FrameTagAnimationDirection;
 import ase.chunks.ChunkType;
 import ase.chunks.FrameTagsChunk;
 import ase.chunks.LayerChunk;
 import haxe.io.Bytes;
+import openfl.Lib;
 import openfl.display.Sprite;
 import openfl.events.Event;
-import openfl.Lib;
 import openfl.utils.ByteArray;
 
 /**
   The main class in the library
 **/
 class AsepriteSprite extends Sprite {
-  private var _duration:Int = 0;
-  private var _frames:Array<Frame> = [];
+  private var _currentDirection:Int = FrameTagAnimationDirection.FORWARD;
   private var _frameTags:FrameTagsChunk;
+  private var _frameTime:Int = 0;
+  private var _frames:Array<Frame> = [];
   private var _lastTime:Int;
   private var _layers:Array<LayerChunk> = [];
   private var _palette:Palette;
-  private var _playing:Bool = false;
-
+  private var _playing:Bool = true;
   private var _spriteLayers = {
     background: new Sprite(),
     image: new Sprite()
   };
+
   private var _tag:Map<String, Tag> = [];
   private var _tags:Array<Tag> = [];
+  private var _totalDuration:Int = 0;
 
   /**
     Palette
@@ -81,8 +84,8 @@ class AsepriteSprite extends Sprite {
       for (frame in aseprite.frames) {
         var newFrame:Frame = new Frame(this, frame);
         newFrame.visible = false;
-        newFrame.startTime = _duration;
-        _duration += newFrame.duration;
+        newFrame.startTime = _totalDuration;
+        _totalDuration += newFrame.duration;
         _frames.push(newFrame);
         _spriteLayers.image.addChild(newFrame);
       }
@@ -106,7 +109,8 @@ class AsepriteSprite extends Sprite {
     if (aseprite != null) {
       if (value != null) {
         _spriteLayers.background.graphics.beginFill(backgroundColor);
-        _spriteLayers.background.graphics.drawRect(0, 0, aseprite.header.width, aseprite.header.height);
+        _spriteLayers.background.graphics.drawRect(0, 0,
+          aseprite.header.width, aseprite.header.height);
         _spriteLayers.background.graphics.endFill();
       } else {
         _spriteLayers.background.graphics.clear();
@@ -146,17 +150,20 @@ class AsepriteSprite extends Sprite {
   function set_currentTag(value:String):String {
     if (value != currentTag && _tag.exists(value)) {
       currentTag = value;
+      if (currentFrame < tag[currentTag].data.fromFrame
+        || currentFrame > tag[currentTag].data.toFrame)
+        currentFrame = tag[currentTag].data.fromFrame;
     }
     return currentTag;
   }
 
   /**
-    The duration of the whole animation or the current frame
+    The total duration of the sprite
   **/
-  public var duration(get, never):Int;
+  public var totalDuration(get, never):Int;
 
-  function get_duration():Int {
-    return _duration;
+  function get_totalDuration():Int {
+    return _totalDuration;
   }
 
   /**
@@ -197,7 +204,8 @@ class AsepriteSprite extends Sprite {
       if (aseprite != null) {
         var _mask:Sprite = new Sprite();
         _mask.graphics.beginFill(0x0);
-        _mask.graphics.drawRect(0, 0, aseprite.header.width, aseprite.header.height);
+        _mask.graphics.drawRect(0, 0, aseprite.header.width,
+          aseprite.header.height);
         _mask.graphics.endFill();
         _spriteLayers.image.mask = _mask;
         _spriteLayers.image.addChild(_mask);
@@ -225,39 +233,10 @@ class AsepriteSprite extends Sprite {
   }
 
   /**
-    Set current time of the sprite in milliseconds
-  **/
-  public var time(default, set):Int = 0;
-
-  function set_time(value:Int):Int {
-    if (value > duration) {
-      if (loop) {
-        while (value > duration) {
-          value -= duration;
-        }
-      } else {
-        value = duration;
-      }
-    }
-
-    for (index in 0..._frames.length) {
-      var frame:Frame = _frames[index];
-      if (value >= frame.startTime && value < frame.startTime + frame.duration) {
-        currentFrame = index;
-        break;
-      }
-    }
-
-    return time = value;
-  }
-
-  /**
     If set to true will use ENTER_FRAME event to update the state of the sprite.
     Otherwise update `time` of the sprite manually
-
-    @default true
   **/
-  public var useEnterFrame(default, set):Bool = true;
+  public var useEnterFrame(default, set):Bool;
 
   function set_useEnterFrame(value:Bool):Bool {
     if (!useEnterFrame && value) {
@@ -321,9 +300,53 @@ class AsepriteSprite extends Sprite {
   **/
   private function new() {
     super();
+    useEnterFrame = true;
     addChild(_spriteLayers.background);
     addChild(_spriteLayers.image);
     addEventListener(Event.ADDED_TO_STAGE, onAddedToStage);
+  }
+
+  /**
+    Advance animation by `time` milliseconds
+  **/
+  public function advance(time:Int) {
+    if (time < 0) // TODO
+      throw 'TODO: time value can be negative';
+
+    _frameTime += time;
+
+    while (_frameTime > _frames[currentFrame].duration) {
+      _frameTime -= _frames[currentFrame].duration;
+      nextFrame();
+    }
+  }
+
+  /**
+    Go to the next frame respecting the direction of the current animation
+  **/
+  public function nextFrame() {
+    // TODO: Refactoring
+    var direction:Int = currentTag != null ? tag[currentTag].data.animDirection : _currentDirection;
+    var fromFrame:Int = currentTag != null ? tag[currentTag].data.fromFrame : 0;
+    var toFrame:Int = currentTag != null ? tag[currentTag].data.toFrame : _frames.length
+      - 1;
+
+    switch (direction) {
+      case(FrameTagAnimationDirection.FORWARD):
+        if (currentFrame + 1 > toFrame) {
+          currentFrame = fromFrame;
+        } else {
+          currentFrame++;
+        }
+      case(FrameTagAnimationDirection.REVERSE):
+        if (currentFrame - 1 < fromFrame) {
+          currentFrame = toFrame;
+        } else {
+          currentFrame--;
+        }
+      case(FrameTagAnimationDirection.PING_PONG):
+        // TODO
+    }
   }
 
   /**
@@ -339,7 +362,7 @@ class AsepriteSprite extends Sprite {
 
     @param tagName Name of the tag to play
   **/
-  public function play(?tagName:String):AsepriteSprite {
+  public function play(?tagName:String = null):AsepriteSprite {
     if (tagName != null)
       currentTag = tagName;
     _playing = true;
@@ -362,7 +385,9 @@ class AsepriteSprite extends Sprite {
   function onEnterFrame(e:Event) {
     var _currentTime:Int = Lib.getTimer();
     var _deltaTime:Int = _currentTime - _lastTime;
-    time += _deltaTime;
+    if (_playing) {
+      advance(_deltaTime);
+    }
     _lastTime = _currentTime;
   }
 }

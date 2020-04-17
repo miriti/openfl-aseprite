@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<project>
+
+  <meta title="AsepriteViewer" package="com.sample.asepriteviewer" version="1.0.0" company="Company Name" />
+  <app main="Main" path="Export" file="AsepriteViewer" />
+
+  <source path="Source" />
+
+  <haxelib name="openfl" />
+  <haxelib name="openfl-aseprite" />
+
+  <assets path="Assets" rename="assets" />
+
+  <window width="800" height="600" resizable="false" />
+
+</project>

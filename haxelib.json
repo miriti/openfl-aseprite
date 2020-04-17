@@ -10,6 +10,6 @@
   "contributors": ["Michael Miriti"],
   "dependencies": {
     "ase": "0.9.0",
-    "openfl": "8.9.1"
+    "openfl": ""
   }
 }

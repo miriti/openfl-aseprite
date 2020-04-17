@@ -25,7 +25,7 @@ The main class of the library (`aseprite.AsepriteSprite`) extends `openfl.displa
 To create an `AsepriteSprite` pass `Bytes` of an .ase/.aseprite file to its constructor:
 
 ```haxe
-import ase.AsepriteSprite;
+import aseprite.AsepriteSprite;
 import openfl.Assets;
 
 // <...>
@@ -33,7 +33,7 @@ import openfl.Assets;
 var data:Bytes = Assets.getBytes('path/to/asepriteAsset.aseprite');
 var masked:Bool = true;
 var backgroundColor:Int = 0xcccccc;
-var sprite:AsepriteSprite = new AsepriteSprite(data, masked, backgroundColor);
+var sprite:AsepriteSprite = AsepriteSprite.fromBytes(data, masked, backgroundColor);
 
 addChild(sprite);
 ```
