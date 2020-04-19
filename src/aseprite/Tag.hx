@@ -1,16 +1,16 @@
 package aseprite;
 
-import ase.chunks.FrameTagsChunk.FrameTag;
+import ase.chunks.TagsChunk.Tag;
 
 /**
   Holds information regarding a frame tag
 **/
 class Tag {
-  private var _data:FrameTag;
+  private var _data:ase.chunks.TagsChunk.Tag;
 
-  public var data(get, never):FrameTag;
+  public var data(get, never):ase.chunks.TagsChunk.Tag;
 
-  function get_data():FrameTag {
+  function get_data():ase.chunks.TagsChunk.Tag {
     return _data;
   }
 
@@ -23,7 +23,7 @@ class Tag {
     return _data.tagName;
   }
 
-  public function new(data:FrameTag) {
+  public function new(data:ase.chunks.TagsChunk.Tag) {
     _data = data;
   }
 }

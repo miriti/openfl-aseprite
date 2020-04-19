@@ -38,10 +38,13 @@ class Frame extends Bitmap {
 
   private var _frame:ase.Frame;
 
-  public function new(sprite:AsepriteSprite, frame:ase.Frame) {
-    _frame = frame;
+  private var _bitmap:Bitmap;
 
-    var bitmapData:BitmapData = new BitmapData(sprite.aseprite.header.width, sprite.aseprite.header.height);
+  public function new(sprite:AsepriteSprite, frame:ase.Frame) {
+    super(new BitmapData(sprite.aseprite.header.width,
+      sprite.aseprite.header.height, true, 0x00000000));
+
+    _frame = frame;
 
     for (layer in sprite.layers) {
       _layers.push({
@@ -62,7 +65,8 @@ class Frame extends Bitmap {
       }
 
       for (layer in _layers) {
-        if (layer.cel != null && (layer.layerChunk.flags & LayerFlags.VISIBLE != 0)) {
+        if (layer.cel != null
+          && (layer.layerChunk.flags & LayerFlags.VISIBLE != 0)) {
           // TODO: Implement all the blendModes
           var blendModes:Array<BlendMode> = [
             NORMAL, // 0 - Normal
@@ -88,12 +92,13 @@ class Frame extends Bitmap {
           var blendMode:BlendMode = blendModes[layer.layerChunk.blendMode];
 
           var matrix:Matrix = new Matrix();
-          matrix.translate(layer.cel.chunk.xPosition, layer.cel.chunk.yPosition);
+          matrix.translate(layer.cel.chunk.xPosition,
+            layer.cel.chunk.yPosition);
+          bitmapData.lock();
           bitmapData.draw(layer.cel, matrix, null, blendMode);
+          bitmapData.unlock();
         }
       }
-
-      super(bitmapData);
     }
   }
 }

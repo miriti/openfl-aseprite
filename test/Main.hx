@@ -14,15 +14,18 @@ class Main extends Sprite {
       Assets.getBytes('testAssets/indexed_multi_layer.aseprite'),
       Assets.getBytes('testAssets/animation.aseprite'),
       Assets.getBytes('testAssets/anim_linked_cels.aseprite'),
-      Assets.getBytes('testAssets/tags.ase')
+      Assets.getBytes('testAssets/tags.ase'),
+      Assets.getBytes('testAssets/pong.aseprite')
     ];
 
     var nextX:Float = 0;
     var nextY:Float = 0;
     var maxH:Float = 0;
 
+    var sprites:Array<AsepriteSprite> = [];
+
     for (data in datas) {
-      var sprite:AsepriteSprite = AsepriteSprite.fromBytes(data, true, 0xcccccc);
+      var sprite:AsepriteSprite = AsepriteSprite.fromBytes(data);
       maxH = Math.max(maxH, sprite.height);
 
       if (nextX + sprite.width > stage.stageWidth / 2) {
@@ -34,7 +37,10 @@ class Main extends Sprite {
       sprite.y = nextY;
       nextX += sprite.width;
       addChild(sprite);
+      sprites.push(sprite);
     }
+
+    sprites.pop().play('pong');
 
     scaleX = scaleY = 2;
   }

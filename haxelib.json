@@ -7,9 +7,9 @@
   "version": "1.0.0",
   "releasenote": "Version 1.0.0",
   "classPath": "src/",
-  "contributors": ["Michael Miriti"],
+  "contributors": ["miriti"],
   "dependencies": {
-    "ase": "0.9.0",
+    "ase": "",
     "openfl": ""
   }
 }

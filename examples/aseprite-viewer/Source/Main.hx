@@ -1,12 +1,12 @@
 package;
 
-import openfl.text.TextFormat;
 import aseprite.AsepriteSprite;
 import openfl.Assets;
 import openfl.display.Sprite;
 import openfl.events.MouseEvent;
 import openfl.text.TextField;
 import openfl.text.TextFieldAutoSize;
+import openfl.text.TextFormat;
 
 class Main extends Sprite {
   var sprite:AsepriteSprite;
@@ -24,8 +24,7 @@ class Main extends Sprite {
     var nextButtonX:Float = 10;
     for (tag in sprite.tags) {
       var newButton = createButton(tag.name, () -> {
-        trace('Play tag: ${tag.name}');
-        sprite.play(tag.name);
+        sprite.currentTag = tag.name;
       });
       newButton.x = nextButtonX;
       newButton.y = 5;

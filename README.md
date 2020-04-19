@@ -1,18 +1,16 @@
 # OpenFL Aseprite
 
-**WORK IN PROGRESS**
-
 Load and render sprites and animations in Aseprite format. Based on [ase](https://github.com/miriti/ase) library.
 
 ## Installation
 
-1. Install the library via `haxelib`:
+1. Install the library with `haxelib`:
 
 ```
 haxelib install openfl-aseprite
 ```
 
-2. Add this line to the `project.xml` file:
+2. Add this to the `project.xml` file:
 
 ```xml
  <haxelib name="openfl-aseprite" />
@@ -22,80 +20,96 @@ haxelib install openfl-aseprite
 
 The main class of the library (`aseprite.AsepriteSprite`) extends `openfl.display.Sprite` so you can use it just like any other OpenFL sprite.
 
-To create an `AsepriteSprite` pass `Bytes` of an .ase/.aseprite file to its constructor:
-
 ```haxe
 import aseprite.AsepriteSprite;
 import openfl.Assets;
 
 // <...>
 
-var data:Bytes = Assets.getBytes('path/to/asepriteAsset.aseprite');
-var masked:Bool = true;
-var backgroundColor:Int = 0xcccccc;
-var sprite:AsepriteSprite = AsepriteSprite.fromBytes(data, masked, backgroundColor);
+var sprite:AsepriteSprite = AsepriteSprite.fromBytes(Assets.getBytes('path/to/asepriteAsset.aseprite'));
 
 addChild(sprite);
 ```
 
-The constructor has two optional parameters:
+By default an `AsepriteSprite` instance adds an `ENTER_FRAME` listener to advance the animation automatically. If you don't want it you can pass `false` as a second argument of the constructor or the `fromBytes` method. To advance the animation manually use `advance` or `nextFrame` methods or `currentFrame` property;
 
-- `masked` - if set to `true` a mask will be added to the sprite to hide any content outsize of the sprite's boundaries
-- `backgroundColor` - if set will add rectangle of the size of the sprite to the background
+```haxe
 
-### `AsepriteSprite` class properties
+var sprite:AsepriteSprite = AsepriteSprite.fromBytes(Assets.getBytes('path/to/asepriteAsset.aseprite'), false); // Won't add an `ENTER_FRAME` listener
 
-#### `aseprite`
+sprite.advance(300); // Advance the animation by 300 milliseconds
 
-An instance of the [`ase.Aseprite`](https://github.com/miriti/ase) class
+sprite.nextFrame(); // Go to the next frame of the animation
 
-#### `currentFrame`
+sprite.currentFrame = 32; // Explicitly set the current frame of the animation
 
-Current frame of the animation
+```
 
-#### `duration` (read-only)
+### Playback and tags
 
-Duration of the animation in milliseconds
+```haxe
+sprite.play(); // If no tag specified - play from the first frame to the end of the animation
 
-#### `frames`
+sprite.pause(); // Pauses the playback
 
-Array of frames
+sprite.stop(); // Stops the playback and moves the playhead to the first frame of the animation or the current tag;
 
-#### `layers`
+sprite.play('tag_name'); // Start playing a specific tag if it's not playing already
+```
 
-Array of layers
+**NOTE**: The methods above only make sense if `useEnterFrame = true`
 
-#### `loop`
+```haxe
+for(tag in sprite.tags) { // Loop through the animation tags
+  trace(tag.name); // Print tag's name
+}
 
-Whether the animation should be looped or played once
+sprite.currentTag = 'tag_name'; // Change the current tag. If other tag is currently playing - go to the first frame of the tag and continue playing. If not playing - only moves the playhead to the first frame of the tag.
 
-#### `time`
+sprite.currentTag = null; // Reset the current tag. Will play from the very first to the very last frame of the animation
+```
 
-Current time of the animation in milliseconds. Setting this property will automatically show the appropriate frame on the timeline
+Control the playback direction
 
-#### `useEnterFrame` (default `true`)
+```haxe
+import ase.AnimationDirection;
 
-If set to `true` will use `Event.ENTER_FRAME` event to progress animation. Otherwise the `time` or `currentFrame` property should be updated
+// <...>
 
-### `AsepriteSprite` class methods
+sprite.direction = AnimationDirection.FORWARD; // Play from the first frame to the last one
+sprite.direction = AnimationDirection.REVERSE; // Play from the last frame to the first one
+sprite.direction = AnimationDirection.PING_PONG; // Play the animation back and forth
 
-#### `play()`
+/**
+  It's not necessary to use the constants from the `AnimationDirection` class. You can use integers instead:
 
-Play the animation
+  FORWARD = 0
+  REVERSE = 1
+  PING_PONG = 2
+ **/
+```
 
-### Tags
+**NOTE**: Will override the playback direction of the current tag
 
-## TODO
+## Dox Documentation
 
-- [ ] Slices
-- [ ] Color profile
-- [ ] Optimization
-- [ ] Support all the bland modes
+From the project's directory:
 
-## Authors
+```bash
+$ cd scripts
+$ haxe doc.hxml
+```
 
-- Michael Miriti (github: @miriti, email: m.s.miriti@gmail.com, twitter: @michael_miriti)
+HTML documentation fill be generated in the `documentation` directory in the project's directory
+
+## Author
+
+Michael Miriti
+
+- email: m.s.miriti@gmail.com
+- github: https://github.com/miriti
+- twitter: https://twitter.com/michael_miriti
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md) file for details
+This project is licensed under the MIT License - see [LICENSE.md](LICENSE.md) for details
