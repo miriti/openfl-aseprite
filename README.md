@@ -2,6 +2,8 @@
 
 Load and render sprites and animations in Aseprite format. Based on [ase](https://github.com/miriti/ase) library.
 
+[Live Demo](examples/aseprite-viewer/Export/html5/bin/index.html)
+
 ## Installation
 
 1. Install the library with `haxelib`:
