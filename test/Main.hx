@@ -1,5 +1,6 @@
 package;
 
+import ase.chunks.ChunkType;
 import aseprite.AsepriteSprite;
 import openfl.Assets;
 import openfl.display.Sprite;
@@ -15,6 +16,7 @@ class Main extends Sprite {
       Assets.getBytes('testAssets/animation.aseprite'),
       Assets.getBytes('testAssets/anim_linked_cels.aseprite'),
       Assets.getBytes('testAssets/tags.ase'),
+      Assets.getBytes('testAssets/slices.aseprite'),
       Assets.getBytes('testAssets/pong.aseprite')
     ];
 
@@ -38,9 +40,12 @@ class Main extends Sprite {
       nextX += sprite.width;
       addChild(sprite);
       sprites.push(sprite);
+      sprite.play();
     }
 
-    sprites.pop().play('pong');
+    var pong = sprites[sprites.length - 1];
+
+    pong.play('pong');
 
     scaleX = scaleY = 2;
   }

@@ -11,19 +11,28 @@ import openfl.display.BitmapData;
 import openfl.display.BlendMode;
 import openfl.geom.Matrix;
 
+@:dox(hide)
 typedef LayerDef = {
   layerChunk:LayerChunk,
   cel:Cel
 };
 
 /**
-  A single frame in the animation
+  Holds information regarding a single frame of the animation
 **/
 class Frame extends Bitmap {
   public var duration(get, never):Int;
 
   function get_duration():Int {
     return _frame.header.duration;
+  }
+
+  private var _frame:ase.Frame;
+
+  public var frame(get, never):ase.Frame;
+
+  function get_frame():ase.Frame {
+    return _frame;
   }
 
   private var _layers:Array<LayerDef> = [];
@@ -34,9 +43,23 @@ class Frame extends Bitmap {
     return _layers;
   }
 
+  private var _layersMap:Map<String, LayerDef> = [];
+
+  public var layersMap(get, never):Map<String, LayerDef>;
+
+  function get_layersMap():Map<String, LayerDef> {
+    return _layersMap;
+  }
+
   public var startTime:Int;
 
-  private var _frame:ase.Frame;
+  var _tags:Array<String> = [];
+
+  public var tags(get, never):Array<String>;
+
+  function get_tags():Array<String> {
+    return _tags;
+  }
 
   private var _bitmap:Bitmap;
 
@@ -47,10 +70,12 @@ class Frame extends Bitmap {
     _frame = frame;
 
     for (layer in sprite.layers) {
-      _layers.push({
+      var layerDef = {
         layerChunk: layer,
         cel: null
-      });
+      };
+      _layers.push(layerDef);
+      _layersMap[layer.name] = layerDef;
     }
 
     for (chunk in frame.chunks) {

@@ -13,6 +13,9 @@ using aseprite.Color;
 class Cel extends BitmapData {
   private var _chunk:CelChunk;
 
+  /**
+    Aseprite CelChunk data
+  **/
   public var chunk(get, never):CelChunk;
 
   function get_chunk():CelChunk {

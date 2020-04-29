@@ -12,17 +12,28 @@ import openfl.events.Event;
 
 /**
   The main class in the library
+
+  ```haxe
+  var sprite:AsepriteSprite = AsepriteSprite.fromBytes(Assets.getBytes('path/to/asepriteAsset.aseprite'));
+  addChild(sprite);
+  ```
 **/
 class AsepriteSprite extends Sprite {
   private var _alternatingDirection:Int = AnimationDirection.FORWARD;
+  private var _currentRepeat:Int = 0;
   private var _direction:Int = AnimationDirection.FORWARD;
   private var _frameTags:TagsChunk;
   private var _frameTime:Int = 0;
   private var _frames:Array<Frame> = [];
   private var _lastTime:Int;
   private var _layers:Array<LayerChunk> = [];
+  private var _onFinished:Void->Void = null;
+  private var _onFrame:Array<Int->Void> = [];
+  private var _onTag:Array<Array<String>->Void> = [];
   private var _palette:Palette;
-  private var _playing:Bool = true;
+  private var _playing:Bool = false;
+  private var _repeats:Int = -1;
+  private var _slices:Array<Slice> = [];
   private var _spriteLayers = {
     background: new Sprite(),
     image: new Sprite()
@@ -33,20 +44,22 @@ class AsepriteSprite extends Sprite {
   /**
     Direction of the animation:
 
-    1 - Forward
-    2 - Reverse
-    3 - Ping-Pong
+    ```
+    0 - Forward
+    1 - Reverse
+    2 - Ping-Pong
+    ```
   **/
   public var direction(get, set):Int;
 
   function get_direction():Int {
     return
-      currentTag != null ? tags[currentTag].data.animDirection : _direction;
+      currentTag != null ? tags[currentTag].chunk.animDirection : _direction;
   }
 
   function set_direction(value:Int):Int {
     if (currentTag != null) {
-      tags[currentTag].data.animDirection = value;
+      tags[currentTag].chunk.animDirection = value;
     }
 
     return _direction = value;
@@ -58,7 +71,7 @@ class AsepriteSprite extends Sprite {
   public var fromFrame(get, never):Int;
 
   function get_fromFrame():Int {
-    return currentTag != null ? tags[currentTag].data.fromFrame : 0;
+    return currentTag != null ? tags[currentTag].chunk.fromFrame : 0;
   }
 
   /**
@@ -67,12 +80,18 @@ class AsepriteSprite extends Sprite {
   public var toFrame(get, never):Int;
 
   function get_toFrame():Int {
-    return currentTag != null ? tags[currentTag].data.toFrame : _frames.length
+    return currentTag != null ? tags[currentTag].chunk.toFrame : _frames.length
       - 1;
   }
 
   /**
-    Palette
+    Sprite's palette
+
+    ```haxe
+    for(index => color in sprite.palette.entries) {
+      trace('Paletter entry $index: #${StringTools.hex(color, 6)}');
+    }
+    ```
   **/
   public var palette(get, never):Palette;
 
@@ -113,6 +132,8 @@ class AsepriteSprite extends Sprite {
                 _tags[frameTagData.tagName] = animationTag;
               }
             }
+          case ChunkType.SLICE:
+            _slices.push(new Slice(cast chunk));
         }
       }
 
@@ -125,6 +146,12 @@ class AsepriteSprite extends Sprite {
         _totalDuration += newFrame.duration;
         _frames.push(newFrame);
         _spriteLayers.image.addChild(newFrame);
+      }
+
+      for (tag in tags) {
+        for (frameIndex in tag.chunk.fromFrame...tag.chunk.toFrame + 1) {
+          frames[frameIndex].tags.push(tag.name);
+        }
       }
 
       _frames[0].visible = true;
@@ -146,9 +173,37 @@ class AsepriteSprite extends Sprite {
       value = _frames.length - 1;
 
     if (value != currentFrame) {
+      var prevFrame = currentFrame;
       _frames[currentFrame].visible = false;
       currentFrame = value;
       _frames[currentFrame].visible = true;
+      for (handler in _onFrame) {
+        handler(currentFrame);
+      }
+
+      var tagsChanged:Bool = _frames[prevFrame].tags.length != _frames[currentFrame].tags.length;
+
+      if (!tagsChanged) {
+        // TODO: DRY
+        for (tag in _frames[currentFrame].tags) {
+          if (_frames[prevFrame].tags.indexOf(tag) == -1) {
+            tagsChanged = true;
+            break;
+          }
+        }
+        for (tag in _frames[prevFrame].tags) {
+          if (_frames[currentFrame].tags.indexOf(tag) == -1) {
+            tagsChanged = true;
+            break;
+          }
+        }
+      }
+
+      if (tagsChanged) {
+        for (handler in _onTag) {
+          handler(_frames[currentFrame].tags);
+        }
+      }
     }
 
     return currentFrame;
@@ -165,9 +220,10 @@ class AsepriteSprite extends Sprite {
     if (value != currentTag && tags.exists(value)) {
       currentTag = value;
       _alternatingDirection = AnimationDirection.FORWARD;
-      if (currentFrame < tags[currentTag].data.fromFrame
-        || currentFrame > tags[currentTag].data.toFrame)
-        currentFrame = tags[currentTag].data.fromFrame;
+      if (currentFrame < tags[currentTag].chunk.fromFrame
+        || currentFrame > tags[currentTag].chunk.toFrame)
+        currentFrame = (tags[currentTag].chunk.animDirection == AnimationDirection.FORWARD
+          || tags[currentTag].chunk.animDirection == AnimationDirection.PING_PONG) ? tags[currentTag].chunk.fromFrame : tags[currentTag].chunk.toFrame;
     }
     return currentTag;
   }
@@ -202,9 +258,44 @@ class AsepriteSprite extends Sprite {
   }
 
   /**
-    Whether the animations should be looped or not
+    An array of function that will be called on every frame change
+
+    ```haxe
+    sprite.onFrame.push((frameIndex:Int) -> {
+      trace('Frame index changed to: ${frameIndex}');
+    });
+    ```
   **/
-  public var loop:Bool = true;
+  public var onFrame(get, never):Array<Int->Void>;
+
+  function get_onFrame():Array<Int->Void> {
+    return _onFrame;
+  }
+
+  /**
+    An array of functions that will be called every time
+    tags of the current frame are different from the tags of the previous frame
+
+    ```haxe
+    sprite.onTag.push((tags:Array<String>) -> {
+      trace('Current tags are: ${tags.join(', ')}');
+    });
+    ```
+  **/
+  public var onTag(get, never):Array<Array<String>->Void>;
+
+  function get_onTag():Array<Array<String>->Void> {
+    return _onTag;
+  }
+
+  /**
+    Array of `Slice`s
+  **/
+  public var slices(get, never):Array<Slice>;
+
+  function get_slices():Array<Slice> {
+    return _slices;
+  }
 
   /**
     Map of animation tags by names
@@ -216,7 +307,7 @@ class AsepriteSprite extends Sprite {
   }
 
   /**
-    If set to true will use ENTER_FRAME event to update the state of the sprite.
+    If set to `true` will use `ENTER_FRAME` event to update the state of the sprite.
     Otherwise update `time` of the sprite manually
   **/
   public var useEnterFrame(default, set):Bool;
@@ -235,7 +326,7 @@ class AsepriteSprite extends Sprite {
   }
 
   /**
-    Create a Sprite from a Bytes
+    Create a Sprite from a `Bytes` instance
 
     @param byteArray       ByteArray with file data
     @param useEnterFrame   If `true` add an `ENTER_FRAME` event listener to advence the animation
@@ -288,27 +379,34 @@ class AsepriteSprite extends Sprite {
       currentDirection = _alternatingDirection;
     }
 
-    switch (currentDirection) {
-      case(AnimationDirection.FORWARD):
-        if (currentFrame + 1 > toFrame) {
-          if (direction == AnimationDirection.PING_PONG) {
-            currentFrame--;
-            _alternatingDirection = AnimationDirection.REVERSE;
-          } else
-            currentFrame = fromFrame;
+    var futureFrame:Int = currentFrame;
+    var alternateDirection:Int = currentDirection;
+
+    if (currentDirection == AnimationDirection.FORWARD) {
+      futureFrame = currentFrame + 1;
+      alternateDirection = AnimationDirection.REVERSE;
+    } else if (currentDirection == AnimationDirection.REVERSE) {
+      futureFrame = currentFrame - 1;
+      alternateDirection = AnimationDirection.FORWARD;
+    }
+
+    if (futureFrame > toFrame || futureFrame < fromFrame) {
+      if ((_repeats == -1) || (_repeats != -1 && --_currentRepeat > 0)) {
+        if (direction == AnimationDirection.PING_PONG) {
+          currentFrame += alternateDirection == AnimationDirection.FORWARD ? 1 : -1;
+          _alternatingDirection = alternateDirection;
         } else {
-          currentFrame++;
+          currentFrame = fromFrame;
         }
-      case(AnimationDirection.REVERSE):
-        if (currentFrame - 1 < fromFrame) {
-          if (direction == AnimationDirection.PING_PONG) {
-            currentFrame++;
-            _alternatingDirection = AnimationDirection.FORWARD;
-          } else
-            currentFrame = toFrame;
-        } else {
-          currentFrame--;
+      } else {
+        pause();
+        if (_onFinished != null) {
+          _onFinished();
+          _onFinished = null;
         }
+      }
+    } else {
+      currentFrame = futureFrame;
     }
 
     return this;
@@ -325,21 +423,27 @@ class AsepriteSprite extends Sprite {
   /**
     Start playing the animation
 
-    @param tagName Name of the tag to play
+    @param tagName    Name of the tag to play
+    @param repeats    Number of repeats (-1 - infinite)
+    @param onFinished Callback that will be called when repeats are finished (won't be called if `repeats == -1`)
   **/
-  public function play(?tagName:String = null):AsepriteSprite {
+  public function play(?tagName:String = null, ?repeats:Int = -1,
+      ?onFinished:Void->Void = null):AsepriteSprite {
     if (tagName != null)
       currentTag = tagName;
     _playing = true;
+    _repeats = _currentRepeat = repeats;
+    _onFinished = onFinished;
     return this;
   }
 
   /**
-    Pause the animation and bring the playhead to the beginning
+    Pause the animation and bring the playhead to the first frame of the animation or the current tag
   **/
   public function stop():AsepriteSprite {
     pause();
     currentFrame = fromFrame;
+    _currentRepeat = _repeats;
     return this;
   }
 

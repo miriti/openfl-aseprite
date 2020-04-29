@@ -8,4 +8,5 @@ ImportAll
 -neko dummy.n
 
 --next
+-cmd rm -rf ../documentation
 -cmd haxelib run dox -i ../bin/doc/ -in aseprite -o ../documentation

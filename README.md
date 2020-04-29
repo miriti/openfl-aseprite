@@ -4,6 +4,8 @@ Load and render sprites and animations in Aseprite format. Based on [ase](https:
 
 [Live Demo](https://miriti.github.io/openfl-aseprite/examples/aseprite-viewer/Export/html5/bin/index.html)
 
+[API Documentation](https://miriti.github.io/openfl-aseprite/documentation/index.html)
+
 ## Installation
 
 1. Install the library with `haxelib`:
@@ -52,11 +54,29 @@ sprite.currentFrame = 32; // Explicitly set the current frame of the animation
 ```haxe
 sprite.play(); // If no tag specified - play from the first frame to the end of the animation
 
+sprite.play(3); // Play the animation 3 times
+
+/**
+   Play animation once with `onFinish` callback
+ */
+sprite.play(1, () -> {
+  trace('Animation is finished');
+});
+
+sprite.play('tag_name'); // Start playing a specific tag if it's not playing already
+
+sprite.play('tag_name', 3); // Play `tag_name` tag 3 times
+
+/**
+  Play `tag_name` tag 3 times with an `onFinish` callback
+ */
+sprite.play('tag_name', 3, () -> {
+  trace('Playback is finished after 3 repeats');
+});
+
 sprite.pause(); // Pauses the playback
 
 sprite.stop(); // Stops the playback and moves the playhead to the first frame of the animation or the current tag;
-
-sprite.play('tag_name'); // Start playing a specific tag if it's not playing already
 ```
 
 **NOTE**: The methods above only make sense if `useEnterFrame = true`

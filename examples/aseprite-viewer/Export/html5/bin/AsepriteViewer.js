@@ -893,9 +893,9 @@ ApplicationMain.create = function(config) {
 	ManifestResources.init(config);
 	var _this = app.meta;
 	if(__map_reserved["build"] != null) {
-		_this.setReserved("build","18");
+		_this.setReserved("build","22");
 	} else {
-		_this.h["build"] = "18";
+		_this.h["build"] = "22";
 	}
 	var _this1 = app.meta;
 	if(__map_reserved["company"] != null) {
@@ -4891,6 +4891,7 @@ ase_Aseprite.prototype = {
 	,__class__: ase_Aseprite
 };
 var ase_Frame = function(header,frameData) {
+	this.chunkTypes = new haxe_ds_IntMap();
 	this.chunks = [];
 	var bytesInput = new haxe_io_BytesInput(frameData);
 	this.header = header;
@@ -4912,12 +4913,18 @@ var ase_Frame = function(header,frameData) {
 				}
 			}
 			this.chunks.push(chunk);
+			if(!this.chunkTypes.h.hasOwnProperty(chunk.header.type)) {
+				var v = [chunk];
+				this.chunkTypes.h[chunk.header.type] = v;
+			} else {
+				this.chunkTypes.h[chunk.header.type].push(chunk);
+			}
 			lastChunk = chunk;
 		} catch( error ) {
 			haxe_CallStack.lastException = error;
 			var error1 = ((error) instanceof js__$Boot_HaxeError) ? error.val : error;
 			if(typeof(error1) == "string") {
-				haxe_Log.trace("Error: " + error1,{ fileName : "ase/Frame.hx", lineNumber : 42, className : "ase.Frame", methodName : "new"});
+				haxe_Log.trace("Error: " + error1,{ fileName : "ase/Frame.hx", lineNumber : 55, className : "ase.Frame", methodName : "new"});
 			} else {
 				throw error;
 			}
@@ -4929,6 +4936,7 @@ ase_Frame.__name__ = "ase.Frame";
 ase_Frame.prototype = {
 	header: null
 	,chunks: null
+	,chunkTypes: null
 	,__class__: ase_Frame
 };
 var ase_FrameHeader = function(headerData) {
@@ -5054,31 +5062,22 @@ ase_chunks_ChunkHeader.prototype = {
 	,typeName: null
 	,__class__: ase_chunks_ChunkHeader
 };
-var ase_chunks_OldPaleteChunk = function(header,chunkData) {
-	this.packets = [];
+var ase_chunks_ColorProfileChunk = function(header,chunkData) {
 	ase_chunks_Chunk.call(this,header,chunkData);
-	this.numPackets = this.bytesInput.readUInt16();
-	var _g = 0;
-	var _g1 = this.numPackets;
-	while(_g < _g1) {
-		var packetIndex = _g++;
-		var newPacket = { skipEntries : this.bytesInput.readByte(), numColors : this.bytesInput.readByte(), colors : []};
-		var _g2 = 0;
-		var _g11 = newPacket.numColors;
-		while(_g2 < _g11) {
-			var colorIndex = _g2++;
-			newPacket.colors.push({ red : this.bytesInput.readByte(), green : this.bytesInput.readByte(), blue : this.bytesInput.readByte()});
-		}
-		this.packets.push(newPacket);
-	}
+	this.colorProfileType = this.bytesInput.readUInt16();
+	this.flags = this.bytesInput.readUInt16();
+	this.gamma = this.bytesInput.readFloat();
+	this.reserved = this.bytesInput.read(0);
 };
-$hxClasses["ase.chunks.OldPaleteChunk"] = ase_chunks_OldPaleteChunk;
-ase_chunks_OldPaleteChunk.__name__ = "ase.chunks.OldPaleteChunk";
-ase_chunks_OldPaleteChunk.__super__ = ase_chunks_Chunk;
-ase_chunks_OldPaleteChunk.prototype = $extend(ase_chunks_Chunk.prototype,{
-	numPackets: null
-	,packets: null
-	,__class__: ase_chunks_OldPaleteChunk
+$hxClasses["ase.chunks.ColorProfileChunk"] = ase_chunks_ColorProfileChunk;
+ase_chunks_ColorProfileChunk.__name__ = "ase.chunks.ColorProfileChunk";
+ase_chunks_ColorProfileChunk.__super__ = ase_chunks_Chunk;
+ase_chunks_ColorProfileChunk.prototype = $extend(ase_chunks_Chunk.prototype,{
+	colorProfileType: null
+	,flags: null
+	,gamma: null
+	,reserved: null
+	,__class__: ase_chunks_ColorProfileChunk
 });
 var ase_chunks_LayerChunk = function(header,chunkData) {
 	ase_chunks_Chunk.call(this,header,chunkData);
@@ -5107,22 +5106,50 @@ ase_chunks_LayerChunk.prototype = $extend(ase_chunks_Chunk.prototype,{
 	,name: null
 	,__class__: ase_chunks_LayerChunk
 });
-var ase_chunks_ColorProfileChunk = function(header,chunkData) {
+var ase_chunks_MaskChunk = function(header,chunkData) {
 	ase_chunks_Chunk.call(this,header,chunkData);
-	this.colorProfileType = this.bytesInput.readUInt16();
-	this.flags = this.bytesInput.readUInt16();
-	this.gamma = this.bytesInput.readFloat();
-	this.reserved = this.bytesInput.read(0);
+	this.xPosition = this.bytesInput.readInt16();
+	this.yPosition = this.bytesInput.readInt16();
+	this.width = this.bytesInput.readUInt16();
+	this.height = this.bytesInput.readUInt16();
+	this.reserved = this.bytesInput.read(8);
 };
-$hxClasses["ase.chunks.ColorProfileChunk"] = ase_chunks_ColorProfileChunk;
-ase_chunks_ColorProfileChunk.__name__ = "ase.chunks.ColorProfileChunk";
-ase_chunks_ColorProfileChunk.__super__ = ase_chunks_Chunk;
-ase_chunks_ColorProfileChunk.prototype = $extend(ase_chunks_Chunk.prototype,{
-	colorProfileType: null
-	,flags: null
-	,gamma: null
+$hxClasses["ase.chunks.MaskChunk"] = ase_chunks_MaskChunk;
+ase_chunks_MaskChunk.__name__ = "ase.chunks.MaskChunk";
+ase_chunks_MaskChunk.__super__ = ase_chunks_Chunk;
+ase_chunks_MaskChunk.prototype = $extend(ase_chunks_Chunk.prototype,{
+	xPosition: null
+	,yPosition: null
+	,width: null
+	,height: null
 	,reserved: null
-	,__class__: ase_chunks_ColorProfileChunk
+	,__class__: ase_chunks_MaskChunk
+});
+var ase_chunks_OldPaleteChunk = function(header,chunkData) {
+	this.packets = [];
+	ase_chunks_Chunk.call(this,header,chunkData);
+	this.numPackets = this.bytesInput.readUInt16();
+	var _g = 0;
+	var _g1 = this.numPackets;
+	while(_g < _g1) {
+		var packetIndex = _g++;
+		var newPacket = { skipEntries : this.bytesInput.readByte(), numColors : this.bytesInput.readByte(), colors : []};
+		var _g2 = 0;
+		var _g11 = newPacket.numColors;
+		while(_g2 < _g11) {
+			var colorIndex = _g2++;
+			newPacket.colors.push({ red : this.bytesInput.readByte(), green : this.bytesInput.readByte(), blue : this.bytesInput.readByte()});
+		}
+		this.packets.push(newPacket);
+	}
+};
+$hxClasses["ase.chunks.OldPaleteChunk"] = ase_chunks_OldPaleteChunk;
+ase_chunks_OldPaleteChunk.__name__ = "ase.chunks.OldPaleteChunk";
+ase_chunks_OldPaleteChunk.__super__ = ase_chunks_Chunk;
+ase_chunks_OldPaleteChunk.prototype = $extend(ase_chunks_Chunk.prototype,{
+	numPackets: null
+	,packets: null
+	,__class__: ase_chunks_OldPaleteChunk
 });
 var ase_chunks_PaletteChunk = function(header,chunkData) {
 	this.entries = new haxe_ds_IntMap();
@@ -5152,53 +5179,50 @@ ase_chunks_PaletteChunk.prototype = $extend(ase_chunks_Chunk.prototype,{
 	,entries: null
 	,__class__: ase_chunks_PaletteChunk
 });
-var ase_chunks_UserDataChunk = function(header,chunkData) {
+var ase_chunks_SliceChunk = function(header,chunkData) {
+	this.sliceKeys = [];
 	ase_chunks_Chunk.call(this,header,chunkData);
+	this.numSliceKeys = this.bytesInput.readInt32();
 	this.flags = this.bytesInput.readInt32();
-	this.hasText = this.flags == 1 || this.flags == 3;
-	this.hasColor = this.flags == 2 || this.flags == 3;
-	if(this.hasText) {
-		this.text = this.bytesInput.readString((this.hasColor ? this.bytesInput.totlen - 4 : this.bytesInput.totlen) - 4);
-	}
-	if(this.hasColor) {
-		this.red = this.bytesInput.readByte();
-		this.green = this.bytesInput.readByte();
-		this.blue = this.bytesInput.readByte();
-		this.alpha = this.bytesInput.readByte();
+	this.reserved = this.bytesInput.readInt32();
+	this.name = this.bytesInput.readString(this.bytesInput.readUInt16());
+	var _g = 0;
+	var _g1 = this.numSliceKeys;
+	while(_g < _g1) {
+		var n = _g++;
+		var sliceKey = new ase_chunks_SliceKey();
+		sliceKey.frameNumber = this.bytesInput.readInt32();
+		sliceKey.xOrigin = this.bytesInput.readInt32();
+		sliceKey.yOrigin = this.bytesInput.readInt32();
+		sliceKey.width = this.bytesInput.readInt32();
+		sliceKey.height = this.bytesInput.readInt32();
+		if((this.flags & 1) != 0) {
+			this.has9Slices = true;
+			sliceKey.xCenter = this.bytesInput.readInt32();
+			sliceKey.yCenter = this.bytesInput.readInt32();
+			sliceKey.centerWidth = this.bytesInput.readInt32();
+			sliceKey.centerHeight = this.bytesInput.readInt32();
+		}
+		if((this.flags & 2) != 0) {
+			this.hasPivot = true;
+			sliceKey.xPivot = this.bytesInput.readInt32();
+			sliceKey.yPivot = this.bytesInput.readInt32();
+		}
+		this.sliceKeys.push(sliceKey);
 	}
 };
-$hxClasses["ase.chunks.UserDataChunk"] = ase_chunks_UserDataChunk;
-ase_chunks_UserDataChunk.__name__ = "ase.chunks.UserDataChunk";
-ase_chunks_UserDataChunk.__super__ = ase_chunks_Chunk;
-ase_chunks_UserDataChunk.prototype = $extend(ase_chunks_Chunk.prototype,{
-	flags: null
-	,text: null
-	,hasText: null
-	,hasColor: null
-	,red: null
-	,green: null
-	,blue: null
-	,alpha: null
-	,__class__: ase_chunks_UserDataChunk
-});
-var ase_chunks_MaskChunk = function(header,chunkData) {
-	ase_chunks_Chunk.call(this,header,chunkData);
-	this.xPosition = this.bytesInput.readInt16();
-	this.yPosition = this.bytesInput.readInt16();
-	this.width = this.bytesInput.readUInt16();
-	this.height = this.bytesInput.readUInt16();
-	this.reserved = this.bytesInput.read(8);
-};
-$hxClasses["ase.chunks.MaskChunk"] = ase_chunks_MaskChunk;
-ase_chunks_MaskChunk.__name__ = "ase.chunks.MaskChunk";
-ase_chunks_MaskChunk.__super__ = ase_chunks_Chunk;
-ase_chunks_MaskChunk.prototype = $extend(ase_chunks_Chunk.prototype,{
-	xPosition: null
-	,yPosition: null
-	,width: null
-	,height: null
+$hxClasses["ase.chunks.SliceChunk"] = ase_chunks_SliceChunk;
+ase_chunks_SliceChunk.__name__ = "ase.chunks.SliceChunk";
+ase_chunks_SliceChunk.__super__ = ase_chunks_Chunk;
+ase_chunks_SliceChunk.prototype = $extend(ase_chunks_Chunk.prototype,{
+	numSliceKeys: null
+	,flags: null
 	,reserved: null
-	,__class__: ase_chunks_MaskChunk
+	,name: null
+	,sliceKeys: null
+	,has9Slices: null
+	,hasPivot: null
+	,__class__: ase_chunks_SliceChunk
 });
 var ase_chunks_TagsChunk = function(header,chunkData) {
 	this.tags = [];
@@ -5222,6 +5246,35 @@ ase_chunks_TagsChunk.prototype = $extend(ase_chunks_Chunk.prototype,{
 	,tags: null
 	,__class__: ase_chunks_TagsChunk
 });
+var ase_chunks_UserDataChunk = function(header,chunkData) {
+	ase_chunks_Chunk.call(this,header,chunkData);
+	this.flags = this.bytesInput.readInt32();
+	this.hasText = (this.flags & 1) != 0;
+	this.hasColor = (this.flags & 2) != 0;
+	if(this.hasText) {
+		this.text = this.bytesInput.readString(this.bytesInput.readUInt16());
+	}
+	if(this.hasColor) {
+		this.red = this.bytesInput.readByte();
+		this.green = this.bytesInput.readByte();
+		this.blue = this.bytesInput.readByte();
+		this.alpha = this.bytesInput.readByte();
+	}
+};
+$hxClasses["ase.chunks.UserDataChunk"] = ase_chunks_UserDataChunk;
+ase_chunks_UserDataChunk.__name__ = "ase.chunks.UserDataChunk";
+ase_chunks_UserDataChunk.__super__ = ase_chunks_Chunk;
+ase_chunks_UserDataChunk.prototype = $extend(ase_chunks_Chunk.prototype,{
+	flags: null
+	,text: null
+	,hasText: null
+	,hasColor: null
+	,red: null
+	,green: null
+	,blue: null
+	,alpha: null
+	,__class__: ase_chunks_UserDataChunk
+});
 var ase_chunks_ChunkType = function() { };
 $hxClasses["ase.chunks.ChunkType"] = ase_chunks_ChunkType;
 ase_chunks_ChunkType.__name__ = "ase.chunks.ChunkType";
@@ -5235,7 +5288,7 @@ var ase_chunks_PaletteEntry = function(entryData) {
 	this.green = bytesInput.readByte();
 	this.blue = bytesInput.readByte();
 	this.alpha = bytesInput.readByte();
-	if(this.flags == 1) {
+	if((this.flags & 1) != 0) {
 		this.name = bytesInput.readString(bytesInput.readUInt16());
 	}
 };
@@ -5253,21 +5306,44 @@ ase_chunks_PaletteEntry.prototype = {
 	}
 	,__class__: ase_chunks_PaletteEntry
 };
+var ase_chunks_SliceKey = function() {
+};
+$hxClasses["ase.chunks.SliceKey"] = ase_chunks_SliceKey;
+ase_chunks_SliceKey.__name__ = "ase.chunks.SliceKey";
+ase_chunks_SliceKey.prototype = {
+	frameNumber: null
+	,xOrigin: null
+	,yOrigin: null
+	,width: null
+	,height: null
+	,xCenter: null
+	,yCenter: null
+	,centerWidth: null
+	,centerHeight: null
+	,xPivot: null
+	,yPivot: null
+	,__class__: ase_chunks_SliceKey
+};
 var aseprite_AsepriteSprite = function(aseprite1,useEnterFrame) {
 	if(useEnterFrame == null) {
 		useEnterFrame = true;
 	}
-	this.loop = true;
 	this._totalDuration = 0;
 	this.currentTag = null;
 	this.currentFrame = 0;
 	this._tags = new haxe_ds_StringMap();
 	this._spriteLayers = { background : new openfl_display_Sprite(), image : new openfl_display_Sprite()};
-	this._playing = true;
+	this._slices = [];
+	this._repeats = -1;
+	this._playing = false;
+	this._onTag = [];
+	this._onFrame = [];
+	this._onFinished = null;
 	this._layers = [];
 	this._frames = [];
 	this._frameTime = 0;
 	this._direction = 0;
+	this._currentRepeat = 0;
 	this._alternatingDirection = 0;
 	openfl_display_Sprite.call(this);
 	this.set_aseprite(aseprite1);
@@ -5287,14 +5363,20 @@ aseprite_AsepriteSprite.fromBytes = function(bytes,useEnterFrame) {
 aseprite_AsepriteSprite.__super__ = openfl_display_Sprite;
 aseprite_AsepriteSprite.prototype = $extend(openfl_display_Sprite.prototype,{
 	_alternatingDirection: null
+	,_currentRepeat: null
 	,_direction: null
 	,_frameTags: null
 	,_frameTime: null
 	,_frames: null
 	,_lastTime: null
 	,_layers: null
+	,_onFinished: null
+	,_onFrame: null
+	,_onTag: null
 	,_palette: null
 	,_playing: null
+	,_repeats: null
+	,_slices: null
 	,_spriteLayers: null
 	,_tags: null
 	,get_direction: function() {
@@ -5302,7 +5384,7 @@ aseprite_AsepriteSprite.prototype = $extend(openfl_display_Sprite.prototype,{
 			var this1 = this.get_tags();
 			var key = this.currentTag;
 			var _this = this1;
-			return (__map_reserved[key] != null ? _this.getReserved(key) : _this.h[key]).get_data().animDirection;
+			return (__map_reserved[key] != null ? _this.getReserved(key) : _this.h[key]).get_chunk().animDirection;
 		} else {
 			return this._direction;
 		}
@@ -5312,7 +5394,7 @@ aseprite_AsepriteSprite.prototype = $extend(openfl_display_Sprite.prototype,{
 			var this1 = this.get_tags();
 			var key = this.currentTag;
 			var _this = this1;
-			(__map_reserved[key] != null ? _this.getReserved(key) : _this.h[key]).get_data().animDirection = value;
+			(__map_reserved[key] != null ? _this.getReserved(key) : _this.h[key]).get_chunk().animDirection = value;
 		}
 		return this._direction = value;
 	}
@@ -5321,7 +5403,7 @@ aseprite_AsepriteSprite.prototype = $extend(openfl_display_Sprite.prototype,{
 			var this1 = this.get_tags();
 			var key = this.currentTag;
 			var _this = this1;
-			return (__map_reserved[key] != null ? _this.getReserved(key) : _this.h[key]).get_data().fromFrame;
+			return (__map_reserved[key] != null ? _this.getReserved(key) : _this.h[key]).get_chunk().fromFrame;
 		} else {
 			return 0;
 		}
@@ -5331,7 +5413,7 @@ aseprite_AsepriteSprite.prototype = $extend(openfl_display_Sprite.prototype,{
 			var this1 = this.get_tags();
 			var key = this.currentTag;
 			var _this = this1;
-			return (__map_reserved[key] != null ? _this.getReserved(key) : _this.h[key]).get_data().toFrame;
+			return (__map_reserved[key] != null ? _this.getReserved(key) : _this.h[key]).get_chunk().toFrame;
 		} else {
 			return this._frames.length - 1;
 		}
@@ -5373,7 +5455,7 @@ aseprite_AsepriteSprite.prototype = $extend(openfl_display_Sprite.prototype,{
 								++num;
 								newName = "" + frameTagData.tagName + "_" + num;
 							}
-							haxe_Log.trace("WARNING: This file already contains tag named \"" + frameTagData.tagName + "\". It will be automatically reanamed to \"" + newName + "\"",{ fileName : "aseprite/AsepriteSprite.hx", lineNumber : 110, className : "aseprite.AsepriteSprite", methodName : "set_aseprite"});
+							haxe_Log.trace("WARNING: This file already contains tag named \"" + frameTagData.tagName + "\". It will be automatically reanamed to \"" + newName + "\"",{ fileName : "aseprite/AsepriteSprite.hx", lineNumber : 131, className : "aseprite.AsepriteSprite", methodName : "set_aseprite"});
 							var _this2 = this._tags;
 							if(__map_reserved[newName] != null) {
 								_this2.setReserved(newName,animationTag);
@@ -5394,6 +5476,9 @@ aseprite_AsepriteSprite.prototype = $extend(openfl_display_Sprite.prototype,{
 				case 8217:
 					this._palette = new aseprite_Palette(chunk);
 					break;
+				case 8226:
+					this._slices.push(new aseprite_Slice(chunk));
+					break;
 				}
 			}
 			this._frames = [];
@@ -5409,6 +5494,17 @@ aseprite_AsepriteSprite.prototype = $extend(openfl_display_Sprite.prototype,{
 				this._frames.push(newFrame);
 				this._spriteLayers.image.addChild(newFrame);
 			}
+			var _this4 = this.get_tags();
+			var tag = new haxe_ds__$StringMap_StringMapIterator(_this4,_this4.arrayKeys());
+			while(tag.hasNext()) {
+				var tag1 = tag.next();
+				var _g5 = tag1.get_chunk().fromFrame;
+				var _g6 = tag1.get_chunk().toFrame + 1;
+				while(_g5 < _g6) {
+					var frameIndex = _g5++;
+					this.get_frames()[frameIndex].get_tags().push(tag1.get_name());
+				}
+			}
 			this._frames[0].set_visible(true);
 			this.set_currentFrame(0);
 		}
@@ -5423,9 +5519,49 @@ aseprite_AsepriteSprite.prototype = $extend(openfl_display_Sprite.prototype,{
 			value = this._frames.length - 1;
 		}
 		if(value != this.currentFrame) {
+			var prevFrame = this.currentFrame;
 			this._frames[this.currentFrame].set_visible(false);
 			this.currentFrame = value;
 			this._frames[this.currentFrame].set_visible(true);
+			var _g = 0;
+			var _g1 = this._onFrame;
+			while(_g < _g1.length) {
+				var handler = _g1[_g];
+				++_g;
+				handler(this.currentFrame);
+			}
+			var tagsChanged = this._frames[prevFrame].get_tags().length != this._frames[this.currentFrame].get_tags().length;
+			if(!tagsChanged) {
+				var _g2 = 0;
+				var _g3 = this._frames[this.currentFrame].get_tags();
+				while(_g2 < _g3.length) {
+					var tag = _g3[_g2];
+					++_g2;
+					if(this._frames[prevFrame].get_tags().indexOf(tag) == -1) {
+						tagsChanged = true;
+						break;
+					}
+				}
+				var _g4 = 0;
+				var _g5 = this._frames[prevFrame].get_tags();
+				while(_g4 < _g5.length) {
+					var tag1 = _g5[_g4];
+					++_g4;
+					if(this._frames[this.currentFrame].get_tags().indexOf(tag1) == -1) {
+						tagsChanged = true;
+						break;
+					}
+				}
+			}
+			if(tagsChanged) {
+				var _g21 = 0;
+				var _g31 = this._onTag;
+				while(_g21 < _g31.length) {
+					var handler1 = _g31[_g21];
+					++_g21;
+					handler1(this._frames[this.currentFrame].get_tags());
+				}
+			}
 		}
 		return this.currentFrame;
 	}
@@ -5446,20 +5582,41 @@ aseprite_AsepriteSprite.prototype = $extend(openfl_display_Sprite.prototype,{
 			var this1 = this.get_tags();
 			var key = this.currentTag;
 			var _this1 = this1;
-			if(tmp2 >= (__map_reserved[key] != null ? _this1.getReserved(key) : _this1.h[key]).get_data().fromFrame) {
+			if(tmp2 >= (__map_reserved[key] != null ? _this1.getReserved(key) : _this1.h[key]).get_chunk().fromFrame) {
 				var tmp3 = this.currentFrame;
 				var this2 = this.get_tags();
 				var key1 = this.currentTag;
 				var _this2 = this2;
-				tmp1 = tmp3 > (__map_reserved[key1] != null ? _this2.getReserved(key1) : _this2.h[key1]).get_data().toFrame;
+				tmp1 = tmp3 > (__map_reserved[key1] != null ? _this2.getReserved(key1) : _this2.h[key1]).get_chunk().toFrame;
 			} else {
 				tmp1 = true;
 			}
 			if(tmp1) {
+				var tmp4;
+				var tmp5;
 				var this3 = this.get_tags();
 				var key2 = this.currentTag;
 				var _this3 = this3;
-				this.set_currentFrame((__map_reserved[key2] != null ? _this3.getReserved(key2) : _this3.h[key2]).get_data().fromFrame);
+				if((__map_reserved[key2] != null ? _this3.getReserved(key2) : _this3.h[key2]).get_chunk().animDirection != 0) {
+					var this4 = this.get_tags();
+					var key3 = this.currentTag;
+					var _this4 = this4;
+					tmp5 = (__map_reserved[key3] != null ? _this4.getReserved(key3) : _this4.h[key3]).get_chunk().animDirection == 2;
+				} else {
+					tmp5 = true;
+				}
+				if(tmp5) {
+					var this5 = this.get_tags();
+					var key4 = this.currentTag;
+					var _this5 = this5;
+					tmp4 = (__map_reserved[key4] != null ? _this5.getReserved(key4) : _this5.h[key4]).get_chunk().fromFrame;
+				} else {
+					var this6 = this.get_tags();
+					var key5 = this.currentTag;
+					var _this6 = this6;
+					tmp4 = (__map_reserved[key5] != null ? _this6.getReserved(key5) : _this6.h[key5]).get_chunk().toFrame;
+				}
+				this.set_currentFrame(tmp4);
 			}
 		}
 		return this.currentTag;
@@ -5474,7 +5631,15 @@ aseprite_AsepriteSprite.prototype = $extend(openfl_display_Sprite.prototype,{
 	,get_layers: function() {
 		return this._layers;
 	}
-	,loop: null
+	,get_onFrame: function() {
+		return this._onFrame;
+	}
+	,get_onTag: function() {
+		return this._onTag;
+	}
+	,get_slices: function() {
+		return this._slices;
+	}
 	,get_tags: function() {
 		return this._tags;
 	}
@@ -5505,35 +5670,33 @@ aseprite_AsepriteSprite.prototype = $extend(openfl_display_Sprite.prototype,{
 		if(this.get_direction() == 2) {
 			currentDirection = this._alternatingDirection;
 		}
-		switch(currentDirection) {
-		case 0:
-			if(this.currentFrame + 1 > this.get_toFrame()) {
+		var futureFrame = this.currentFrame;
+		var alternateDirection = currentDirection;
+		if(currentDirection == 0) {
+			futureFrame = this.currentFrame + 1;
+			alternateDirection = 1;
+		} else if(currentDirection == 1) {
+			futureFrame = this.currentFrame - 1;
+			alternateDirection = 0;
+		}
+		if(futureFrame > this.get_toFrame() || futureFrame < this.get_fromFrame()) {
+			if(this._repeats == -1 || this._repeats != -1 && --this._currentRepeat > 0) {
 				if(this.get_direction() == 2) {
 					var _g = this;
-					_g.set_currentFrame(_g.currentFrame - 1);
-					this._alternatingDirection = 1;
+					_g.set_currentFrame(_g.currentFrame + (alternateDirection == 0 ? 1 : -1));
+					this._alternatingDirection = alternateDirection;
 				} else {
 					this.set_currentFrame(this.get_fromFrame());
 				}
 			} else {
-				var _g1 = this;
-				_g1.set_currentFrame(_g1.currentFrame + 1);
-			}
-			break;
-		case 1:
-			if(this.currentFrame - 1 < this.get_fromFrame()) {
-				if(this.get_direction() == 2) {
-					var _g2 = this;
-					_g2.set_currentFrame(_g2.currentFrame + 1);
-					this._alternatingDirection = 0;
-				} else {
-					this.set_currentFrame(this.get_toFrame());
+				this.pause();
+				if(this._onFinished != null) {
+					this._onFinished();
+					this._onFinished = null;
 				}
-			} else {
-				var _g3 = this;
-				_g3.set_currentFrame(_g3.currentFrame - 1);
 			}
-			break;
+		} else {
+			this.set_currentFrame(futureFrame);
 		}
 		return this;
 	}
@@ -5541,16 +5704,22 @@ aseprite_AsepriteSprite.prototype = $extend(openfl_display_Sprite.prototype,{
 		this._playing = false;
 		return this;
 	}
-	,play: function(tagName) {
+	,play: function(tagName,repeats,onFinished) {
+		if(repeats == null) {
+			repeats = -1;
+		}
 		if(tagName != null) {
 			this.set_currentTag(tagName);
 		}
 		this._playing = true;
+		this._repeats = this._currentRepeat = repeats;
+		this._onFinished = onFinished;
 		return this;
 	}
 	,stop: function() {
 		this.pause();
 		this.set_currentFrame(this.get_fromFrame());
+		this._currentRepeat = this._repeats;
 		return this;
 	}
 	,onAddedToStage: function(e) {
@@ -7631,6 +7800,8 @@ openfl_display_Bitmap.prototype = $extend(openfl_display_DisplayObject.prototype
 	,__class__: openfl_display_Bitmap
 });
 var aseprite_Frame = function(sprite,frame) {
+	this._tags = [];
+	this._layersMap = new haxe_ds_StringMap();
 	this._layers = [];
 	openfl_display_Bitmap.call(this,new openfl_display_BitmapData(sprite.aseprite.header.width,sprite.aseprite.header.height,true,0));
 	this._frame = frame;
@@ -7639,7 +7810,15 @@ var aseprite_Frame = function(sprite,frame) {
 	while(_g < _g1.length) {
 		var layer = _g1[_g];
 		++_g;
-		this._layers.push({ layerChunk : layer, cel : null});
+		var layerDef = { layerChunk : layer, cel : null};
+		this._layers.push(layerDef);
+		var k = layer.name;
+		var _this = this._layersMap;
+		if(__map_reserved[k] != null) {
+			_this.setReserved(k,layerDef);
+		} else {
+			_this.h[k] = layerDef;
+		}
 	}
 	var _g2 = 0;
 	var _g3 = frame.chunks;
@@ -7679,12 +7858,23 @@ aseprite_Frame.prototype = $extend(openfl_display_Bitmap.prototype,{
 	get_duration: function() {
 		return this._frame.header.duration;
 	}
+	,_frame: null
+	,get_frame: function() {
+		return this._frame;
+	}
 	,_layers: null
 	,get_layers: function() {
 		return this._layers;
 	}
+	,_layersMap: null
+	,get_layersMap: function() {
+		return this._layersMap;
+	}
 	,startTime: null
-	,_frame: null
+	,_tags: null
+	,get_tags: function() {
+		return this._tags;
+	}
 	,_bitmap: null
 	,__class__: aseprite_Frame
 });
@@ -7718,18 +7908,30 @@ aseprite_Palette.prototype = {
 	}
 	,__class__: aseprite_Palette
 };
+var aseprite_Slice = function(chunk) {
+	this._chunk = chunk;
+};
+$hxClasses["aseprite.Slice"] = aseprite_Slice;
+aseprite_Slice.__name__ = "aseprite.Slice";
+aseprite_Slice.prototype = {
+	_chunk: null
+	,get_chunk: function() {
+		return this._chunk;
+	}
+	,__class__: aseprite_Slice
+};
 var aseprite_Tag = function(data) {
-	this._data = data;
+	this._chunk = data;
 };
 $hxClasses["aseprite.Tag"] = aseprite_Tag;
 aseprite_Tag.__name__ = "aseprite.Tag";
 aseprite_Tag.prototype = {
-	_data: null
-	,get_data: function() {
-		return this._data;
+	_chunk: null
+	,get_chunk: function() {
+		return this._chunk;
 	}
 	,get_name: function() {
-		return this._data.tagName;
+		return this._chunk.tagName;
 	}
 	,__class__: aseprite_Tag
 };
@@ -26562,7 +26764,7 @@ var lime_utils_AssetCache = function() {
 	this.audio = new haxe_ds_StringMap();
 	this.font = new haxe_ds_StringMap();
 	this.image = new haxe_ds_StringMap();
-	this.version = 225503;
+	this.version = 470884;
 };
 $hxClasses["lime.utils.AssetCache"] = lime_utils_AssetCache;
 lime_utils_AssetCache.__name__ = "lime.utils.AssetCache";
@@ -74038,34 +74240,35 @@ ase_chunks_ChunkType.SLICE = 8226;
 ase_chunks_ChunkType.NAMES = (function($this) {
 	var $r;
 	var _g = new haxe_ds_IntMap();
-	_g.h[4] = "OLD_PALETTE_04";
-	_g.h[17] = "OLD_PALETTE_11";
-	_g.h[8196] = "LAYER";
 	_g.h[8197] = "CEL";
 	_g.h[8198] = "CEL_EXTRA";
 	_g.h[8199] = "COLOR_PROFILE";
+	_g.h[8196] = "LAYER";
 	_g.h[8214] = "MASK";
-	_g.h[8215] = "PATH";
-	_g.h[8216] = "TAGS";
+	_g.h[4] = "OLD_PALETTE_04";
+	_g.h[17] = "OLD_PALETTE_11";
 	_g.h[8217] = "PALETTE";
-	_g.h[8224] = "USER_DATA";
+	_g.h[8215] = "PATH";
 	_g.h[8226] = "SLICE";
+	_g.h[8216] = "TAGS";
+	_g.h[8224] = "USER_DATA";
 	$r = _g;
 	return $r;
 }(this));
 ase_chunks_ChunkType.CLASSES = (function($this) {
 	var $r;
 	var _g = new haxe_ds_IntMap();
-	_g.h[4] = ase_chunks_OldPaleteChunk;
-	_g.h[17] = ase_chunks_OldPaleteChunk;
-	_g.h[8196] = ase_chunks_LayerChunk;
 	_g.h[8197] = ase_chunks_CelChunk;
 	_g.h[8198] = ase_chunks_CelExtraChunk;
 	_g.h[8199] = ase_chunks_ColorProfileChunk;
-	_g.h[8217] = ase_chunks_PaletteChunk;
-	_g.h[8224] = ase_chunks_UserDataChunk;
+	_g.h[8196] = ase_chunks_LayerChunk;
 	_g.h[8214] = ase_chunks_MaskChunk;
+	_g.h[4] = ase_chunks_OldPaleteChunk;
+	_g.h[17] = ase_chunks_OldPaleteChunk;
+	_g.h[8217] = ase_chunks_PaletteChunk;
+	_g.h[8226] = ase_chunks_SliceChunk;
 	_g.h[8216] = ase_chunks_TagsChunk;
+	_g.h[8224] = ase_chunks_UserDataChunk;
 	$r = _g;
 	return $r;
 }(this));
