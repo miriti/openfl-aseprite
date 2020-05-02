@@ -58,7 +58,7 @@ class Main extends Sprite {
   }
 
   function updateBatsNumber() {
-    batsNumber.text = 'Bets number: ${bats.length}';
+    batsNumber.text = 'Bats number: ${bats.length}';
   }
 
   function onEnterFrame(event:Event) {
