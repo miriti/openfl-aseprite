@@ -13,6 +13,11 @@ class Slice {
   function get_chunk():SliceChunk
     return _chunk;
 
+  public var name(get, never):String;
+
+  function get_name():String
+    return _chunk.name;
+
   public function new(chunk:SliceChunk) {
     _chunk = chunk;
   }

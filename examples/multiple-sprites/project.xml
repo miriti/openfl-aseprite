@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<project>
+
+  <meta title="MultipleSprites" package="com.sample.multiplesprites" version="1.0.0" company="Company Name" />
+  <app main="Main" path="Export" file="MultipleSprites" />
+
+  <source path="Source" />
+
+  <haxelib name="openfl" />
+  <haxelib name="openfl-aseprite" />
+
+  <assets path="Assets" />
+
+  <window width="640" height="480" fps="60" resizable="false" />
+
+</project>

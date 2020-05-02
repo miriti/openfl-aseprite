@@ -20,6 +20,7 @@ import openfl.events.Event;
 **/
 class AsepriteSprite extends Sprite {
   private var _alternatingDirection:Int = AnimationDirection.FORWARD;
+  private var _aseprite:Aseprite;
   private var _currentRepeat:Int = 0;
   private var _direction:Int = AnimationDirection.FORWARD;
   private var _frameTags:TagsChunk;
@@ -33,7 +34,7 @@ class AsepriteSprite extends Sprite {
   private var _palette:Palette;
   private var _playing:Bool = false;
   private var _repeats:Int = -1;
-  private var _slices:Array<Slice> = [];
+  private var _slices:Map<String, Slice> = [];
   private var _spriteLayers = {
     background: new Sprite(),
     image: new Sprite()
@@ -52,10 +53,9 @@ class AsepriteSprite extends Sprite {
   **/
   public var direction(get, set):Int;
 
-  function get_direction():Int {
+  function get_direction():Int
     return
       currentTag != null ? tags[currentTag].chunk.animDirection : _direction;
-  }
 
   function set_direction(value:Int):Int {
     if (currentTag != null) {
@@ -70,19 +70,17 @@ class AsepriteSprite extends Sprite {
   **/
   public var fromFrame(get, never):Int;
 
-  function get_fromFrame():Int {
+  function get_fromFrame():Int
     return currentTag != null ? tags[currentTag].chunk.fromFrame : 0;
-  }
 
   /**
     Ending frame of the animation or the current tag
   **/
   public var toFrame(get, never):Int;
 
-  function get_toFrame():Int {
+  function get_toFrame():Int
     return currentTag != null ? tags[currentTag].chunk.toFrame : _frames.length
       - 1;
-  }
 
   /**
     Sprite's palette
@@ -95,71 +93,16 @@ class AsepriteSprite extends Sprite {
   **/
   public var palette(get, never):Palette;
 
-  function get_palette():Palette {
+  function get_palette():Palette
     return _palette;
-  }
 
   /**
     Parsed Aseprite file data
   **/
-  public var aseprite(default, set):Aseprite;
+  public var aseprite(get, never):Aseprite;
 
-  function set_aseprite(value:Aseprite):Aseprite {
-    if (value != aseprite) {
-      aseprite = value;
-      for (chunk in aseprite.frames[0].chunks) {
-        switch (chunk.header.type) {
-          case ChunkType.LAYER:
-            _layers.push(cast chunk);
-          case ChunkType.PALETTE:
-            _palette = new Palette(cast chunk);
-          case ChunkType.TAGS:
-            _frameTags = cast chunk;
-
-            for (frameTagData in _frameTags.tags) {
-              var animationTag:aseprite.Tag = new aseprite.Tag(frameTagData);
-
-              if (_tags.exists(frameTagData.tagName)) {
-                var num:Int = 1;
-                var newName:String = '${frameTagData.tagName}_$num';
-                while (_tags.exists(newName)) {
-                  num++;
-                  newName = '${frameTagData.tagName}_$num';
-                }
-                trace('WARNING: This file already contains tag named "${frameTagData.tagName}". It will be automatically reanamed to "$newName"');
-                _tags[newName] = animationTag;
-              } else {
-                _tags[frameTagData.tagName] = animationTag;
-              }
-            }
-          case ChunkType.SLICE:
-            _slices.push(new Slice(cast chunk));
-        }
-      }
-
-      _frames = [];
-
-      for (frame in aseprite.frames) {
-        var newFrame:Frame = new Frame(this, frame);
-        newFrame.visible = false;
-        newFrame.startTime = _totalDuration;
-        _totalDuration += newFrame.duration;
-        _frames.push(newFrame);
-        _spriteLayers.image.addChild(newFrame);
-      }
-
-      for (tag in tags) {
-        for (frameIndex in tag.chunk.fromFrame...tag.chunk.toFrame + 1) {
-          frames[frameIndex].tags.push(tag.name);
-        }
-      }
-
-      _frames[0].visible = true;
-      currentFrame = 0;
-    }
-
-    return aseprite;
-  }
+  function get_aseprite():Aseprite
+    return _aseprite;
 
   /**
     Current frame index of the animation (0...frames.length)
@@ -244,18 +187,16 @@ class AsepriteSprite extends Sprite {
   **/
   public var frames(get, never):Array<Frame>;
 
-  function get_frames():Array<Frame> {
+  function get_frames():Array<Frame>
     return _frames;
-  }
 
   /**
     List of layer chunks
   **/
   public var layers(get, never):Array<LayerChunk>;
 
-  function get_layers():Array<LayerChunk> {
+  function get_layers():Array<LayerChunk>
     return _layers;
-  }
 
   /**
     An array of function that will be called on every frame change
@@ -268,9 +209,8 @@ class AsepriteSprite extends Sprite {
   **/
   public var onFrame(get, never):Array<Int->Void>;
 
-  function get_onFrame():Array<Int->Void> {
+  function get_onFrame():Array<Int->Void>
     return _onFrame;
-  }
 
   /**
     An array of functions that will be called every time
@@ -284,27 +224,24 @@ class AsepriteSprite extends Sprite {
   **/
   public var onTag(get, never):Array<Array<String>->Void>;
 
-  function get_onTag():Array<Array<String>->Void> {
+  function get_onTag():Array<Array<String>->Void>
     return _onTag;
-  }
 
   /**
     Array of `Slice`s
   **/
-  public var slices(get, never):Array<Slice>;
+  public var slices(get, never):Map<String, Slice>;
 
-  function get_slices():Array<Slice> {
+  function get_slices():Map<String, Slice>
     return _slices;
-  }
 
   /**
     Map of animation tags by names
   **/
   public var tags(get, never):Map<String, aseprite.Tag>;
 
-  function get_tags():Map<String, aseprite.Tag> {
+  function get_tags():Map<String, aseprite.Tag>
     return _tags;
-  }
 
   /**
     If set to `true` will use `ENTER_FRAME` event to update the state of the sprite.
@@ -340,11 +277,19 @@ class AsepriteSprite extends Sprite {
     Constructor
 
     @param aseprite       An Aseprite instance of a parser ase/aseprite file
+    @param sprite         Base sprite
     @param useEnterFrame  If `true` add an `ENTER_FRAME` event listener to advence the animation
   **/
-  private function new(aseprite:Aseprite, useEnterFrame:Bool = true) {
+  private function new(?aseprite:Aseprite, ?sprite:AsepriteSprite,
+      useEnterFrame:Bool = true) {
     super();
-    this.aseprite = aseprite;
+
+    if (aseprite != null)
+      parseAseprite(aseprite);
+
+    if (sprite != null)
+      copyFromSprite(sprite);
+
     this.useEnterFrame = useEnterFrame;
     addChild(_spriteLayers.background);
     addChild(_spriteLayers.image);
@@ -438,6 +383,20 @@ class AsepriteSprite extends Sprite {
   }
 
   /**
+    Create a new sprite from a slice
+  **/
+  public function slice(sliceName:String):AsepriteSprite {
+    return null;
+  }
+
+  /**
+    Create a copy of this sprite bypassing file data parsing by reusing the resources
+  **/
+  public function spawn():AsepriteSprite {
+    return new AsepriteSprite(this, useEnterFrame);
+  }
+
+  /**
     Pause the animation and bring the playhead to the first frame of the animation or the current tag
   **/
   public function stop():AsepriteSprite {
@@ -445,6 +404,27 @@ class AsepriteSprite extends Sprite {
     currentFrame = fromFrame;
     _currentRepeat = _repeats;
     return this;
+  }
+
+  function copyFromSprite(sprite:AsepriteSprite) {
+    _aseprite = sprite.aseprite;
+    _layers = sprite._layers;
+    _palette = sprite._palette;
+    _frameTags = sprite._frameTags;
+    _tags = sprite._tags;
+    _slices = sprite._slices;
+
+    _totalDuration = sprite._totalDuration;
+
+    for (frame in sprite.frames) {
+      var copyFrame = frame.copy();
+      copyFrame.visible = false;
+      _frames.push(copyFrame);
+      _spriteLayers.image.addChild(copyFrame);
+    }
+
+    _frames[0].visible = true;
+    currentFrame = 0;
   }
 
   function onAddedToStage(e:Event) {
@@ -458,5 +438,60 @@ class AsepriteSprite extends Sprite {
       advance(_deltaTime);
     }
     _lastTime = _currentTime;
+  }
+
+  function parseAseprite(value:Aseprite):Aseprite {
+    if (value != _aseprite) {
+      _aseprite = value;
+      for (chunk in aseprite.frames[0].chunks) {
+        switch (chunk.header.type) {
+          case ChunkType.LAYER:
+            _layers.push(cast chunk);
+          case ChunkType.PALETTE:
+            _palette = new Palette(cast chunk);
+          case ChunkType.TAGS:
+            _frameTags = cast chunk;
+
+            for (frameTagData in _frameTags.tags) {
+              var animationTag:aseprite.Tag = new aseprite.Tag(frameTagData);
+
+              if (_tags.exists(frameTagData.tagName)) {
+                var num:Int = 1;
+                var newName:String = '${frameTagData.tagName}_$num';
+                while (_tags.exists(newName)) {
+                  num++;
+                  newName = '${frameTagData.tagName}_$num';
+                }
+                trace('WARNING: This file already contains tag named "${frameTagData.tagName}". It will be automatically reanamed to "$newName"');
+                _tags[newName] = animationTag;
+              } else {
+                _tags[frameTagData.tagName] = animationTag;
+              }
+            }
+          case ChunkType.SLICE:
+            var newSlice = new Slice(cast chunk);
+            _slices[newSlice.name] = newSlice;
+        }
+      }
+
+      for (frame in aseprite.frames) {
+        var newFrame:Frame = new Frame(this, frame);
+        newFrame.visible = false;
+        _totalDuration += newFrame.duration;
+        _frames.push(newFrame);
+        _spriteLayers.image.addChild(newFrame);
+      }
+
+      for (tag in tags) {
+        for (frameIndex in tag.chunk.fromFrame...tag.chunk.toFrame + 1) {
+          frames[frameIndex].tags.push(tag.name);
+        }
+      }
+
+      _frames[0].visible = true;
+      currentFrame = 0;
+    }
+
+    return aseprite;
   }
 }

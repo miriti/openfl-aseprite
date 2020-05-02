@@ -2,7 +2,9 @@
 
 Load and render sprites and animations in Aseprite format. Based on [ase](https://github.com/miriti/ase) library.
 
-[Live Demo](https://miriti.github.io/openfl-aseprite/examples/aseprite-viewer/Export/html5/bin/index.html)
+[Live Demo 1](https://miriti.github.io/openfl-aseprite/examples/aseprite-viewer/Export/html5/bin/index.html)
+
+[Live Demo 2](https://miriti.github.io/openfl-aseprite/examples/multiple-sprites/Export/html5/bin/index.html)
 
 [API Documentation](https://miriti.github.io/openfl-aseprite/documentation/index.html)
 

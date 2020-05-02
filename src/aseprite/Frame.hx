@@ -51,8 +51,6 @@ class Frame extends Bitmap {
     return _layersMap;
   }
 
-  public var startTime:Int;
-
   var _tags:Array<String> = [];
 
   public var tags(get, never):Array<String>;
@@ -61,69 +59,84 @@ class Frame extends Bitmap {
     return _tags;
   }
 
-  private var _bitmap:Bitmap;
+  public function new(?frameBitmapData:BitmapData, ?sprite:AsepriteSprite,
+      ?frame:ase.Frame) {
+    if (frameBitmapData != null) {
+      super(frameBitmapData);
+    } else {
+      super(new BitmapData(sprite.aseprite.header.width,
+        sprite.aseprite.header.height, true, 0x00000000));
 
-  public function new(sprite:AsepriteSprite, frame:ase.Frame) {
-    super(new BitmapData(sprite.aseprite.header.width,
-      sprite.aseprite.header.height, true, 0x00000000));
+      _frame = frame;
 
-    _frame = frame;
-
-    for (layer in sprite.layers) {
-      var layerDef = {
-        layerChunk: layer,
-        cel: null
-      };
-      _layers.push(layerDef);
-      _layersMap[layer.name] = layerDef;
-    }
-
-    for (chunk in frame.chunks) {
-      if (chunk.header.type == ChunkType.CEL) {
-        var cel:CelChunk = cast chunk;
-
-        if (cel.celType == CelType.LINKED) {
-          _layers[cel.layerIndex].cel = sprite.frames[cel.linkedFrame].layers[cel.layerIndex].cel;
-        } else {
-          _layers[cel.layerIndex].cel = new Cel(sprite, cel);
-        }
+      for (layer in sprite.layers) {
+        var layerDef = {
+          layerChunk: layer,
+          cel: null
+        };
+        _layers.push(layerDef);
+        _layersMap[layer.name] = layerDef;
       }
 
-      for (layer in _layers) {
-        if (layer.cel != null
-          && (layer.layerChunk.flags & LayerFlags.VISIBLE != 0)) {
-          // TODO: Implement all the blendModes
-          var blendModes:Array<BlendMode> = [
-            NORMAL, // 0 - Normal
-            MULTIPLY, // 1 - Multiply
-            SCREEN, // 2 - Scren
-            OVERLAY, // 3 - Overlay
-            DARKEN, // 4 - Darken
-            LIGHTEN, // 5 -Lighten
-            NORMAL, // 6 - Color Dodge - NOT IMPLEMENTED
-            NORMAL, // 7 - Color Burn - NOT IMPLEMENTED
-            HARDLIGHT, // 8 - Hard Light
-            NORMAL, // 9 - Soft Light - NOT IMPLEMENTED
-            DIFFERENCE, // 10 - Difference
-            ERASE, // 11 - Exclusion - Not sure about that
-            NORMAL, // 12 - Hue - NOT IMPLEMENTED
-            NORMAL, // 13 - Saturation - NOT IMPLEMENTED
-            NORMAL, // 14 - Color - NOT IMPLEMENTED
-            NORMAL, // 15 - Luminosity - NOT IMPLEMENTED
-            ADD, // 16 - Addition
-            SUBTRACT, // 17 - Subtract
-            NORMAL // 18 - Divide - NOT IMPLEMENTED
-          ];
-          var blendMode:BlendMode = blendModes[layer.layerChunk.blendMode];
+      for (chunk in frame.chunks) {
+        if (chunk.header.type == ChunkType.CEL) {
+          var cel:CelChunk = cast chunk;
 
-          var matrix:Matrix = new Matrix();
-          matrix.translate(layer.cel.chunk.xPosition,
-            layer.cel.chunk.yPosition);
-          bitmapData.lock();
-          bitmapData.draw(layer.cel, matrix, null, blendMode);
-          bitmapData.unlock();
+          if (cel.celType == CelType.LINKED) {
+            _layers[cel.layerIndex].cel = sprite.frames[cel.linkedFrame].layers[cel.layerIndex].cel;
+          } else {
+            _layers[cel.layerIndex].cel = new Cel(sprite, cel);
+          }
+        }
+
+        for (layer in _layers) {
+          if (layer.cel != null
+            && (layer.layerChunk.flags & LayerFlags.VISIBLE != 0)) {
+            // TODO: Implement all the blendModes
+            var blendModes:Array<BlendMode> = [
+              NORMAL, // 0 - Normal
+              MULTIPLY, // 1 - Multiply
+              SCREEN, // 2 - Scren
+              OVERLAY, // 3 - Overlay
+              DARKEN, // 4 - Darken
+              LIGHTEN, // 5 -Lighten
+              NORMAL, // 6 - Color Dodge - NOT IMPLEMENTED
+              NORMAL, // 7 - Color Burn - NOT IMPLEMENTED
+              HARDLIGHT, // 8 - Hard Light
+              NORMAL, // 9 - Soft Light - NOT IMPLEMENTED
+              DIFFERENCE, // 10 - Difference
+              ERASE, // 11 - Exclusion - Not sure about that
+              NORMAL, // 12 - Hue - NOT IMPLEMENTED
+              NORMAL, // 13 - Saturation - NOT IMPLEMENTED
+              NORMAL, // 14 - Color - NOT IMPLEMENTED
+              NORMAL, // 15 - Luminosity - NOT IMPLEMENTED
+              ADD, // 16 - Addition
+              SUBTRACT, // 17 - Subtract
+              NORMAL // 18 - Divide - NOT IMPLEMENTED
+            ];
+            var blendMode:BlendMode = blendModes[layer.layerChunk.blendMode];
+
+            var matrix:Matrix = new Matrix();
+            matrix.translate(layer.cel.chunk.xPosition,
+              layer.cel.chunk.yPosition);
+            bitmapData.lock();
+            bitmapData.draw(layer.cel, matrix, null, blendMode);
+            bitmapData.unlock();
+          }
         }
       }
     }
+  }
+
+  /**
+    Creates a copy of the frame reusing the resources
+  **/
+  public function copy():Frame {
+    var copyFrame = new Frame(bitmapData);
+    copyFrame._frame = _frame;
+    copyFrame._layers = _layers;
+    copyFrame._layersMap = _layersMap;
+    copyFrame._tags = _tags;
+    return copyFrame;
   }
 }
