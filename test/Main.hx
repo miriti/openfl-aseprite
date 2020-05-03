@@ -1,9 +1,9 @@
 package;
 
-import ase.chunks.ChunkType;
 import aseprite.AsepriteSprite;
 import openfl.Assets;
 import openfl.display.Sprite;
+import openfl.events.MouseEvent;
 
 class Main extends Sprite {
   public function new() {
@@ -17,6 +17,7 @@ class Main extends Sprite {
       Assets.getBytes('testAssets/anim_linked_cels.aseprite'),
       Assets.getBytes('testAssets/tags.ase'),
       Assets.getBytes('testAssets/slices.aseprite'),
+      Assets.getBytes('testAssets/slices2.aseprite'),
       Assets.getBytes('testAssets/pong.aseprite')
     ];
 
@@ -43,8 +44,25 @@ class Main extends Sprite {
       sprite.play();
     }
 
-    var pong = sprites[sprites.length - 1];
+    var slices2 = sprites[sprites.length - 2];
 
+    for (slice in slices2.slices) {
+      var sliceSprite = slices2.spawn(slice.name);
+      sliceSprite.x = slices2.x + slice.chunk.sliceKeys[0].xOrigin;
+      sliceSprite.y = slices2.y + slice.chunk.sliceKeys[0].yOrigin;
+      sliceSprite.buttonMode = true;
+      sliceSprite.addEventListener(MouseEvent.MOUSE_DOWN,
+        (event:MouseEvent) -> {
+          sliceSprite.startDrag();
+        });
+      sliceSprite.addEventListener(MouseEvent.MOUSE_UP, (event:MouseEvent) -> {
+        sliceSprite.stopDrag();
+      });
+      sliceSprite.play();
+      addChild(sliceSprite);
+    }
+
+    var pong = sprites[sprites.length - 1];
     pong.play('pong');
 
     scaleX = scaleY = 2;

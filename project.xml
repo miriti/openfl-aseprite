@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <project>
-  <meta title="OpenFL Aseprite Test" package="com.michaelmiriti.openfl.aseprite" version="1.0.0" company="Michael Miriti" />
+  <meta title="OpenFL Aseprite Test" package="com.michaelmiriti.openfl.aseprite" version="1.2.0" company="Michael Miriti" />
   <app main="Main" path="bin/test" file="openfl-aseprite" />
 
   <assets path="testAssets" />
@@ -11,7 +11,7 @@
   <haxelib name="ase" />
   <haxelib name="openfl" />
 
-  <window width="1200" height="920" resizable="false" fps="60" />
+  <window width="1200" height="1024" resizable="false" fps="60" />
 
   <haxedef name="js-source-map" if="html5" />
   <haxedef name="source-map-content" if="html5" />

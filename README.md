@@ -2,9 +2,9 @@
 
 Load and render sprites and animations in Aseprite format. Based on [ase](https://github.com/miriti/ase) library.
 
-[Live Demo 1](https://miriti.github.io/openfl-aseprite/examples/aseprite-viewer/Export/html5/bin/index.html)
+[Demo 1](https://miriti.github.io/openfl-aseprite/examples/aseprite-viewer/Export/html5/bin/index.html) [Source](https://github.com/miriti/openfl-aseprite/tree/master/examples/aseprite-viewer)
 
-[Live Demo 2](https://miriti.github.io/openfl-aseprite/examples/multiple-sprites/Export/html5/bin/index.html)
+[Demo 2](https://miriti.github.io/openfl-aseprite/examples/multiple-sprites/Export/html5/bin/index.html) [Source](https://github.com/miriti/openfl-aseprite/tree/master/examples/multiple-sprites)
 
 [API Documentation](https://miriti.github.io/openfl-aseprite/documentation/index.html)
 
@@ -35,6 +35,21 @@ import openfl.Assets;
 var sprite:AsepriteSprite = AsepriteSprite.fromBytes(Assets.getBytes('path/to/asepriteAsset.aseprite'));
 
 addChild(sprite);
+```
+
+Create a new sprite reusing the resources:
+
+```haxe
+var sprite:AsepriteSprite = AsepriteSprite.fromBytes(Assets.getBytes('path/to/asepriteAsset.aseprite'));
+var newSprite:AsepriteSprite = sprite.spawn();
+```
+
+`newSprite` will share the bitmap data from the original sprite thus saving memory and time used to parse the aseprite file data
+
+`spawn` method can also be used to create new sprites from slices:
+
+```haxe
+var newSprite:AsepriteSprite = sprite.spawn('Slice Name');
 ```
 
 By default an `AsepriteSprite` instance adds an `ENTER_FRAME` listener to advance the animation automatically. If you don't want it you can pass `false` as a second argument of the constructor or the `fromBytes` method. To advance the animation manually use `advance` or `nextFrame` methods or `currentFrame` property;

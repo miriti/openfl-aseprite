@@ -281,14 +281,14 @@ class AsepriteSprite extends Sprite {
     @param useEnterFrame  If `true` add an `ENTER_FRAME` event listener to advence the animation
   **/
   private function new(?aseprite:Aseprite, ?sprite:AsepriteSprite,
-      useEnterFrame:Bool = true) {
+      ?slice:Slice, useEnterFrame:Bool = true) {
     super();
 
     if (aseprite != null)
       parseAseprite(aseprite);
 
     if (sprite != null)
-      copyFromSprite(sprite);
+      copyFromSprite(sprite, slice);
 
     this.useEnterFrame = useEnterFrame;
     addChild(_spriteLayers.background);
@@ -383,17 +383,12 @@ class AsepriteSprite extends Sprite {
   }
 
   /**
-    Create a new sprite from a slice
-  **/
-  public function slice(sliceName:String):AsepriteSprite {
-    return null;
-  }
-
-  /**
     Create a copy of this sprite bypassing file data parsing by reusing the resources
+
+    @param sliceName Name of the slice to cut from the sprite
   **/
-  public function spawn():AsepriteSprite {
-    return new AsepriteSprite(this, useEnterFrame);
+  public function spawn(?sliceName:String):AsepriteSprite {
+    return new AsepriteSprite(this, slices[sliceName], useEnterFrame);
   }
 
   /**
@@ -406,7 +401,7 @@ class AsepriteSprite extends Sprite {
     return this;
   }
 
-  function copyFromSprite(sprite:AsepriteSprite) {
+  function copyFromSprite(sprite:AsepriteSprite, ?slice:Slice) {
     _aseprite = sprite.aseprite;
     _layers = sprite._layers;
     _palette = sprite._palette;
@@ -417,7 +412,7 @@ class AsepriteSprite extends Sprite {
     _totalDuration = sprite._totalDuration;
 
     for (frame in sprite.frames) {
-      var copyFrame = frame.copy();
+      var copyFrame = frame.copy(slice);
       copyFrame.visible = false;
       _frames.push(copyFrame);
       _spriteLayers.image.addChild(copyFrame);

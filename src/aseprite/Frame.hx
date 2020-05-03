@@ -1,5 +1,8 @@
 package aseprite;
 
+import openfl.geom.Point;
+import openfl.geom.Rectangle;
+import flash.display3D.Context3DCompareMode;
 import ase.chunks.CelChunk;
 import ase.chunks.CelType;
 import ase.chunks.ChunkType;
@@ -130,9 +133,25 @@ class Frame extends Bitmap {
 
   /**
     Creates a copy of the frame reusing the resources
+
+    @param slice
   **/
-  public function copy():Frame {
-    var copyFrame = new Frame(bitmapData);
+  public function copy(?slice:Slice):Frame {
+    var copyFrame:Frame;
+
+    if (slice != null) {
+      var sliceBitmapData = new BitmapData(slice.chunk.sliceKeys[0].width,
+        slice.chunk.sliceKeys[0].height);
+      sliceBitmapData.copyPixels(bitmapData,
+        new Rectangle(slice.chunk.sliceKeys[0].xOrigin,
+          slice.chunk.sliceKeys[0].yOrigin, slice.chunk.sliceKeys[0].width,
+          slice.chunk.sliceKeys[0].height),
+        new Point(0, 0));
+      copyFrame = new Frame(sliceBitmapData);
+    } else {
+      copyFrame = new Frame(bitmapData);
+    }
+
     copyFrame._frame = _frame;
     copyFrame._layers = _layers;
     copyFrame._layersMap = _layersMap;
