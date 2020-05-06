@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<project>
+
+  <meta title="NineSlice" package="com.sample.nineslice" version="1.0.0" company="Company Name" />
+  <app main="Main" path="Export" file="NineSlice" />
+
+  <source path="Source" />
+
+  <haxelib name="openfl" />
+  <haxelib name="openfl-aseprite" />
+
+  <assets path="Assets" />
+
+  <window background="#cccccc" />
+
+</project>

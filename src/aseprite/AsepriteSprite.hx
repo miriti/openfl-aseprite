@@ -7,6 +7,7 @@ import ase.chunks.LayerChunk;
 import ase.chunks.TagsChunk;
 import haxe.io.Bytes;
 import openfl.Lib;
+import openfl.display.Bitmap;
 import openfl.display.Sprite;
 import openfl.events.Event;
 
@@ -21,6 +22,7 @@ import openfl.events.Event;
 class AsepriteSprite extends Sprite {
   private var _alternatingDirection:Int = AnimationDirection.FORWARD;
   private var _aseprite:Aseprite;
+  private var _bitmap:Bitmap;
   private var _currentRepeat:Int = 0;
   private var _direction:Int = AnimationDirection.FORWARD;
   private var _frameTags:TagsChunk;
@@ -35,10 +37,6 @@ class AsepriteSprite extends Sprite {
   private var _playing:Bool = false;
   private var _repeats:Int = -1;
   private var _slices:Map<String, Slice> = [];
-  private var _spriteLayers = {
-    background: new Sprite(),
-    image: new Sprite()
-  };
 
   private var _tags:Map<String, aseprite.Tag> = [];
 
@@ -115,11 +113,14 @@ class AsepriteSprite extends Sprite {
     if (value >= _frames.length)
       value = _frames.length - 1;
 
+    if (_bitmap.bitmapData == null) {
+      _bitmap.bitmapData = _frames[value].bitmapData;
+    }
+
     if (value != currentFrame) {
       var prevFrame = currentFrame;
-      _frames[currentFrame].visible = false;
       currentFrame = value;
-      _frames[currentFrame].visible = true;
+      _bitmap.bitmapData = _frames[currentFrame].bitmapData;
       for (handler in _onFrame) {
         handler(currentFrame);
       }
@@ -279,20 +280,25 @@ class AsepriteSprite extends Sprite {
     @param aseprite       An Aseprite instance of a parser ase/aseprite file
     @param sprite         Base sprite
     @param useEnterFrame  If `true` add an `ENTER_FRAME` event listener to advence the animation
+    @param spriteWidth    Width of the newly created sprite.
+    @param spriteHeight   Height of the newly created sprite.
   **/
   private function new(?aseprite:Aseprite, ?sprite:AsepriteSprite,
-      ?slice:Slice, useEnterFrame:Bool = true) {
+      ?slice:Slice, useEnterFrame:Bool = true, ?spriteWidth:Int,
+      ?spriteHeight:Int) {
     super();
+
+    _bitmap = new Bitmap();
+    addChild(_bitmap);
 
     if (aseprite != null)
       parseAseprite(aseprite);
 
     if (sprite != null)
-      copyFromSprite(sprite, slice);
+      copyFromSprite(sprite, slice, spriteWidth, spriteHeight);
 
     this.useEnterFrame = useEnterFrame;
-    addChild(_spriteLayers.background);
-    addChild(_spriteLayers.image);
+
     addEventListener(Event.ADDED_TO_STAGE, onAddedToStage);
   }
 
@@ -386,9 +392,13 @@ class AsepriteSprite extends Sprite {
     Create a copy of this sprite bypassing file data parsing by reusing the resources
 
     @param sliceName Name of the slice to cut from the sprite
+    @param spriteWidth Width of the newly created sprite.
+    @param spriteHeight Height of the newly created sprite.
   **/
-  public function spawn(?sliceName:String):AsepriteSprite {
-    return new AsepriteSprite(this, slices[sliceName], useEnterFrame);
+  public function spawn(?sliceName:String, ?spriteWidth:Int,
+      ?spriteHeight:Int):AsepriteSprite {
+    return new AsepriteSprite(this, slices[sliceName], useEnterFrame,
+      spriteWidth, spriteHeight);
   }
 
   /**
@@ -401,7 +411,8 @@ class AsepriteSprite extends Sprite {
     return this;
   }
 
-  function copyFromSprite(sprite:AsepriteSprite, ?slice:Slice) {
+  function copyFromSprite(sprite:AsepriteSprite, ?slice:Slice,
+      ?spriteWidth:Int, ?spriteHeight:Int) {
     _aseprite = sprite.aseprite;
     _layers = sprite._layers;
     _palette = sprite._palette;
@@ -412,13 +423,10 @@ class AsepriteSprite extends Sprite {
     _totalDuration = sprite._totalDuration;
 
     for (frame in sprite.frames) {
-      var copyFrame = frame.copy(slice);
-      copyFrame.visible = false;
+      var copyFrame = frame.copy(slice, spriteWidth, spriteHeight);
       _frames.push(copyFrame);
-      _spriteLayers.image.addChild(copyFrame);
     }
 
-    _frames[0].visible = true;
     currentFrame = 0;
   }
 
@@ -471,10 +479,8 @@ class AsepriteSprite extends Sprite {
 
       for (frame in aseprite.frames) {
         var newFrame:Frame = new Frame(this, frame);
-        newFrame.visible = false;
         _totalDuration += newFrame.duration;
         _frames.push(newFrame);
-        _spriteLayers.image.addChild(newFrame);
       }
 
       for (tag in tags) {
@@ -483,10 +489,20 @@ class AsepriteSprite extends Sprite {
         }
       }
 
-      _frames[0].visible = true;
       currentFrame = 0;
     }
 
     return aseprite;
+  }
+
+  /**
+    Resize all the frames
+  **/
+  public function resize(newWidth:Int, newHeight:Int) {
+    for (frame in frames) {
+      frame.resize(newWidth, newHeight);
+    }
+
+    _bitmap.bitmapData = frames[currentFrame].bitmapData;
   }
 }

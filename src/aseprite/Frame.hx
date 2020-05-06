@@ -1,18 +1,19 @@
 package aseprite;
 
-import openfl.geom.Point;
-import openfl.geom.Rectangle;
-import flash.display3D.Context3DCompareMode;
 import ase.chunks.CelChunk;
 import ase.chunks.CelType;
 import ase.chunks.ChunkType;
 import ase.chunks.LayerChunk;
 import ase.chunks.LayerFlags;
 import aseprite.Cel;
-import openfl.display.Bitmap;
+import aseprite.NineSlice.NineSliceSlices;
 import openfl.display.BitmapData;
 import openfl.display.BlendMode;
+import openfl.display.Shape;
+import openfl.display.Sprite;
 import openfl.geom.Matrix;
+import openfl.geom.Point;
+import openfl.geom.Rectangle;
 
 @:dox(hide)
 typedef LayerDef = {
@@ -23,7 +24,8 @@ typedef LayerDef = {
 /**
   Holds information regarding a single frame of the animation
 **/
-class Frame extends Bitmap {
+class Frame {
+  public var bitmapData:BitmapData;
   public var duration(get, never):Int;
 
   function get_duration():Int {
@@ -54,6 +56,8 @@ class Frame extends Bitmap {
     return _layersMap;
   }
 
+  public var nineSlices:NineSliceSlices;
+
   var _tags:Array<String> = [];
 
   public var tags(get, never):Array<String>;
@@ -62,69 +66,87 @@ class Frame extends Bitmap {
     return _tags;
   }
 
-  public function new(?frameBitmapData:BitmapData, ?sprite:AsepriteSprite,
-      ?frame:ase.Frame) {
+  var _renderWidth:Int;
+  var _renderHeight:Int;
+
+  public function new(?frameBitmapData:BitmapData,
+      ?nineSlices:NineSliceSlices, ?renderWidth:Int, ?renderHeight:Int,
+      ?sprite:AsepriteSprite, ?frame:ase.Frame) {
     if (frameBitmapData != null) {
-      super(frameBitmapData);
+      bitmapData = frameBitmapData;
     } else {
-      super(new BitmapData(sprite.aseprite.header.width,
-        sprite.aseprite.header.height, true, 0x00000000));
+      if (nineSlices != null) {
+        this.nineSlices = nineSlices;
 
-      _frame = frame;
+        renderWidth = renderWidth == null ? nineSlices[0][0].width
+          + nineSlices[0][1].width
+          + nineSlices[0][2].width : renderWidth;
 
-      for (layer in sprite.layers) {
-        var layerDef = {
-          layerChunk: layer,
-          cel: null
-        };
-        _layers.push(layerDef);
-        _layersMap[layer.name] = layerDef;
-      }
+        renderHeight = renderHeight == null ? nineSlices[0][0].height
+          + nineSlices[1][0].height
+          + nineSlices[2][0].height : renderHeight;
 
-      for (chunk in frame.chunks) {
-        if (chunk.header.type == ChunkType.CEL) {
-          var cel:CelChunk = cast chunk;
+        render9Slice(renderWidth, renderHeight);
+      } else {
+        bitmapData = new BitmapData(sprite.aseprite.header.width,
+          sprite.aseprite.header.height, true, 0x00000000);
 
-          if (cel.celType == CelType.LINKED) {
-            _layers[cel.layerIndex].cel = sprite.frames[cel.linkedFrame].layers[cel.layerIndex].cel;
-          } else {
-            _layers[cel.layerIndex].cel = new Cel(sprite, cel);
-          }
+        _frame = frame;
+
+        for (layer in sprite.layers) {
+          var layerDef = {
+            layerChunk: layer,
+            cel: null
+          };
+          _layers.push(layerDef);
+          _layersMap[layer.name] = layerDef;
         }
 
-        for (layer in _layers) {
-          if (layer.cel != null
-            && (layer.layerChunk.flags & LayerFlags.VISIBLE != 0)) {
-            // TODO: Implement all the blendModes
-            var blendModes:Array<BlendMode> = [
-              NORMAL, // 0 - Normal
-              MULTIPLY, // 1 - Multiply
-              SCREEN, // 2 - Scren
-              OVERLAY, // 3 - Overlay
-              DARKEN, // 4 - Darken
-              LIGHTEN, // 5 -Lighten
-              NORMAL, // 6 - Color Dodge - NOT IMPLEMENTED
-              NORMAL, // 7 - Color Burn - NOT IMPLEMENTED
-              HARDLIGHT, // 8 - Hard Light
-              NORMAL, // 9 - Soft Light - NOT IMPLEMENTED
-              DIFFERENCE, // 10 - Difference
-              ERASE, // 11 - Exclusion - Not sure about that
-              NORMAL, // 12 - Hue - NOT IMPLEMENTED
-              NORMAL, // 13 - Saturation - NOT IMPLEMENTED
-              NORMAL, // 14 - Color - NOT IMPLEMENTED
-              NORMAL, // 15 - Luminosity - NOT IMPLEMENTED
-              ADD, // 16 - Addition
-              SUBTRACT, // 17 - Subtract
-              NORMAL // 18 - Divide - NOT IMPLEMENTED
-            ];
-            var blendMode:BlendMode = blendModes[layer.layerChunk.blendMode];
+        for (chunk in frame.chunks) {
+          if (chunk.header.type == ChunkType.CEL) {
+            var cel:CelChunk = cast chunk;
 
-            var matrix:Matrix = new Matrix();
-            matrix.translate(layer.cel.chunk.xPosition,
-              layer.cel.chunk.yPosition);
-            bitmapData.lock();
-            bitmapData.draw(layer.cel, matrix, null, blendMode);
-            bitmapData.unlock();
+            if (cel.celType == CelType.LINKED) {
+              _layers[cel.layerIndex].cel = sprite.frames[cel.linkedFrame].layers[cel.layerIndex].cel;
+            } else {
+              _layers[cel.layerIndex].cel = new Cel(sprite, cel);
+            }
+          }
+
+          for (layer in _layers) {
+            if (layer.cel != null
+              && (layer.layerChunk.flags & LayerFlags.VISIBLE != 0)) {
+              // TODO: Implement all the blendModes
+              var blendModes:Array<BlendMode> = [
+                NORMAL, // 0 - Normal
+                MULTIPLY, // 1 - Multiply
+                SCREEN, // 2 - Scren
+                OVERLAY, // 3 - Overlay
+                DARKEN, // 4 - Darken
+                LIGHTEN, // 5 -Lighten
+                NORMAL, // 6 - Color Dodge - NOT IMPLEMENTED
+                NORMAL, // 7 - Color Burn - NOT IMPLEMENTED
+                HARDLIGHT, // 8 - Hard Light
+                NORMAL, // 9 - Soft Light - NOT IMPLEMENTED
+                DIFFERENCE, // 10 - Difference
+                ERASE, // 11 - Exclusion - Not sure about that
+                NORMAL, // 12 - Hue - NOT IMPLEMENTED
+                NORMAL, // 13 - Saturation - NOT IMPLEMENTED
+                NORMAL, // 14 - Color - NOT IMPLEMENTED
+                NORMAL, // 15 - Luminosity - NOT IMPLEMENTED
+                ADD, // 16 - Addition
+                SUBTRACT, // 17 - Subtract
+                NORMAL // 18 - Divide - NOT IMPLEMENTED
+              ];
+              var blendMode:BlendMode = blendModes[layer.layerChunk.blendMode];
+
+              var matrix:Matrix = new Matrix();
+              matrix.translate(layer.cel.chunk.xPosition,
+                layer.cel.chunk.yPosition);
+              bitmapData.lock();
+              bitmapData.draw(layer.cel, matrix, null, blendMode);
+              bitmapData.unlock();
+            }
           }
         }
       }
@@ -136,18 +158,25 @@ class Frame extends Bitmap {
 
     @param slice
   **/
-  public function copy(?slice:Slice):Frame {
+  public function copy(?slice:Slice, ?spriteWidth:Int,
+      ?spriteHeight:Int):Frame {
     var copyFrame:Frame;
 
     if (slice != null) {
-      var sliceBitmapData = new BitmapData(slice.chunk.sliceKeys[0].width,
-        slice.chunk.sliceKeys[0].height);
-      sliceBitmapData.copyPixels(bitmapData,
-        new Rectangle(slice.chunk.sliceKeys[0].xOrigin,
-          slice.chunk.sliceKeys[0].yOrigin, slice.chunk.sliceKeys[0].width,
-          slice.chunk.sliceKeys[0].height),
-        new Point(0, 0));
-      copyFrame = new Frame(sliceBitmapData);
+      if (slice.chunk.has9Slices) {
+        copyFrame = new Frame(NineSlice.generate(bitmapData,
+          slice.chunk.sliceKeys[0]),
+          spriteWidth, spriteHeight);
+      } else {
+        var sliceBitmapData = new BitmapData(slice.chunk.sliceKeys[0].width,
+          slice.chunk.sliceKeys[0].height);
+        sliceBitmapData.copyPixels(bitmapData,
+          new Rectangle(slice.chunk.sliceKeys[0].xOrigin,
+            slice.chunk.sliceKeys[0].yOrigin, slice.chunk.sliceKeys[0].width,
+            slice.chunk.sliceKeys[0].height),
+          new Point(0, 0));
+        copyFrame = new Frame(sliceBitmapData);
+      }
     } else {
       copyFrame = new Frame(bitmapData);
     }
@@ -157,5 +186,53 @@ class Frame extends Bitmap {
     copyFrame._layersMap = _layersMap;
     copyFrame._tags = _tags;
     return copyFrame;
+  }
+
+  // TODO: Optimize
+  function render9Slice(renderWidth:Int, renderHeight:Int) {
+    if (!(renderWidth != _renderWidth || renderHeight != _renderHeight)) {
+      return;
+    }
+
+    if (bitmapData != null) {
+      bitmapData.dispose();
+      bitmapData = null;
+    }
+
+    var render = new Sprite();
+
+    var centerWidth = renderWidth
+      - (nineSlices[0][0].width + nineSlices[0][2].width);
+    var centerHeight = renderHeight
+      - (nineSlices[0][0].height + nineSlices[2][0].height);
+
+    var centerX = nineSlices[0][0].width;
+    var centerY = nineSlices[0][0].height;
+
+    var xs = [0, centerX, centerX + centerWidth];
+    var ys = [0, centerY, centerY + centerHeight];
+
+    var widths:Array<Int> = [nineSlices[0][0].width, centerWidth, nineSlices[0][2].width];
+    var heights:Array<Int> = [nineSlices[0][0].height, centerHeight, nineSlices[2][0].height];
+
+    for (row in 0...3) {
+      for (col in 0...3) {
+        var sliceRender = new Shape();
+        sliceRender.graphics.beginBitmapFill(nineSlices[row][col]);
+        sliceRender.graphics.drawRect(0, 0, widths[col], heights[row]);
+        sliceRender.graphics.endFill();
+
+        sliceRender.x = xs[col];
+        sliceRender.y = ys[row];
+        render.addChild(sliceRender);
+      }
+    }
+
+    bitmapData = new BitmapData(renderWidth, renderHeight, true, 0x00000000);
+    bitmapData.draw(render);
+  }
+
+  public function resize(newWidth:Int, newHeight:Int) {
+    render9Slice(newWidth, newHeight);
   }
 }
