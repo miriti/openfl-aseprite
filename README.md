@@ -26,15 +26,15 @@ haxelib install openfl-aseprite
 
 ## Usage
 
-The main class of the library (`aseprite.AsepriteSprite`) extends `openfl.display.Sprite` so you can use it just like any other OpenFL sprite.
+The main class of the library (`aseprite.Aseprite`) extends `openfl.display.Sprite` so you can use it just like any other OpenFL sprite.
 
 ```haxe
-import aseprite.AsepriteSprite;
+import aseprite.Aseprite;
 import openfl.Assets;
 
 // <...>
 
-var sprite:AsepriteSprite = AsepriteSprite.fromBytes(Assets.getBytes('path/to/asepriteAsset.aseprite'));
+var sprite:Aseprite = Aseprite.fromBytes(Assets.getBytes('path/to/asepriteAsset.aseprite'));
 
 addChild(sprite);
 ```
@@ -42,8 +42,8 @@ addChild(sprite);
 Create a new sprite reusing the resources:
 
 ```haxe
-var sprite:AsepriteSprite = AsepriteSprite.fromBytes(Assets.getBytes('path/to/asepriteAsset.aseprite'));
-var newSprite:AsepriteSprite = sprite.spawn();
+var sprite:Aseprite = Aseprite.fromBytes(Assets.getBytes('path/to/asepriteAsset.aseprite'));
+var newSprite:Aseprite = sprite.spawn();
 ```
 
 `newSprite` will share the bitmap data from the original sprite thus saving memory and time used to parse the aseprite file data
@@ -51,14 +51,14 @@ var newSprite:AsepriteSprite = sprite.spawn();
 `spawn` method can also be used to create new sprites from slices:
 
 ```haxe
-var newSprite:AsepriteSprite = sprite.spawn('Slice Name');
+var newSprite:Aseprite = sprite.spawn('Slice Name');
 ```
 
-By default an `AsepriteSprite` instance adds an `ENTER_FRAME` listener to advance the animation automatically. If you don't want it you can pass `false` as a second argument of the constructor or the `fromBytes` method. To advance the animation manually use `advance` or `nextFrame` methods or `currentFrame` property;
+By default an `Aseprite` instance adds an `ENTER_FRAME` listener to advance the animation automatically. If you don't want it you can pass `false` as a second argument of the constructor or the `fromBytes` method. To advance the animation manually use `advance` or `nextFrame` methods or `currentFrame` property;
 
 ```haxe
 
-var sprite:AsepriteSprite = AsepriteSprite.fromBytes(Assets.getBytes('path/to/asepriteAsset.aseprite'), false); // Won't add an `ENTER_FRAME` listener
+var sprite:Aseprite = Aseprite.fromBytes(Assets.getBytes('path/to/asepriteAsset.aseprite'), false); // Won't add an `ENTER_FRAME` listener
 
 sprite.advance(300); // Advance the animation by 300 milliseconds
 

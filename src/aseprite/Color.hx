@@ -37,8 +37,7 @@ class Color {
     Returns a 32 bit color value from the pallete
     or 0x00000000 if no such index in the palette
   **/
-  public static function indexed2argb(sprite:AsepriteSprite,
-      index:Int):Null<UInt> {
+  public static function indexed2argb(sprite:Aseprite, index:Int):Null<UInt> {
     return
       index == sprite.ase.header.paletteEntry ? 0x00000000 : (sprite.palette.entries.exists(index) ? sprite.palette.entries[index] : 0x00000000);
   }

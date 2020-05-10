@@ -22,7 +22,7 @@ class Cel extends BitmapData {
     return _chunk;
   }
 
-  public function new(sprite:AsepriteSprite, celChunk:CelChunk) {
+  public function new(sprite:Aseprite, celChunk:CelChunk) {
     super(celChunk.width, celChunk.height, true, 0x00000000);
 
     _chunk = celChunk;

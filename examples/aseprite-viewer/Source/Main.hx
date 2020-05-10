@@ -1,6 +1,6 @@
 package;
 
-import aseprite.AsepriteSprite;
+import aseprite.Aseprite;
 import openfl.Assets;
 import openfl.display.Sprite;
 import openfl.events.MouseEvent;
@@ -9,14 +9,14 @@ import openfl.text.TextFieldAutoSize;
 import openfl.text.TextFormat;
 
 class Main extends Sprite {
-  var sprite:AsepriteSprite;
+  var sprite:Aseprite;
 
   public function new() {
     super();
 
     scaleX = scaleY = 2;
 
-    sprite = AsepriteSprite.fromBytes(Assets.getBytes('assets/example.aseprite'));
+    sprite = Aseprite.fromBytes(Assets.getBytes('assets/example.aseprite'));
     sprite.x = (400 - sprite.width) / 2;
     sprite.play('walking');
     addChild(sprite);

@@ -1,6 +1,6 @@
 package;
 
-import aseprite.AsepriteSprite;
+import aseprite.Aseprite;
 import openfl.Assets;
 import openfl.display.Sprite;
 import openfl.events.MouseEvent;
@@ -25,10 +25,10 @@ class Main extends Sprite {
     var nextY:Float = 0;
     var maxH:Float = 0;
 
-    var sprites:Array<AsepriteSprite> = [];
+    var sprites:Array<Aseprite> = [];
 
     for (data in datas) {
-      var sprite:AsepriteSprite = AsepriteSprite.fromBytes(data);
+      var sprite:Aseprite = Aseprite.fromBytes(data);
       maxH = Math.max(maxH, sprite.height);
 
       if (nextX + sprite.width > stage.stageWidth / 2) {

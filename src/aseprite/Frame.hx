@@ -71,7 +71,7 @@ class Frame {
 
   public function new(?frameBitmapData:BitmapData,
       ?nineSlices:NineSliceSlices, ?renderWidth:Int, ?renderHeight:Int,
-      ?sprite:AsepriteSprite, ?frame:ase.Frame) {
+      ?sprite:Aseprite, ?frame:ase.Frame) {
     if (frameBitmapData != null) {
       bitmapData = frameBitmapData;
     } else {

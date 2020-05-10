@@ -1,7 +1,7 @@
+import aseprite.Aseprite;
 import openfl.Lib;
-import openfl.events.Event;
-import aseprite.AsepriteSprite;
 import openfl.display.Sprite;
+import openfl.events.Event;
 
 class Bat extends Sprite {
   var state(default, set):String;
@@ -15,11 +15,11 @@ class Bat extends Sprite {
     return state;
   }
 
-  var sprite:AsepriteSprite;
+  var sprite:Aseprite;
 
   var time:Int;
 
-  public function new(sprite:AsepriteSprite) {
+  public function new(sprite:Aseprite) {
     super();
     this.sprite = sprite;
     sprite.x = -sprite.width / 2;

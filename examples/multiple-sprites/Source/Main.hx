@@ -1,17 +1,17 @@
 package;
 
+import aseprite.Aseprite;
+import openfl.Assets;
 import openfl.display.FPS;
+import openfl.display.Sprite;
+import openfl.events.Event;
+import openfl.events.MouseEvent;
+import openfl.text.TextField;
 import openfl.text.TextFieldAutoSize;
 import openfl.text.TextFormat;
-import openfl.text.TextField;
-import openfl.events.Event;
-import aseprite.AsepriteSprite;
-import openfl.Assets;
-import openfl.display.Sprite;
-import openfl.events.MouseEvent;
 
 class Main extends Sprite {
-  var batSprite:AsepriteSprite;
+  var batSprite:Aseprite;
 
   var batsLayer:Sprite = new Sprite();
 
@@ -24,7 +24,7 @@ class Main extends Sprite {
   public function new() {
     super();
 
-    batSprite = AsepriteSprite.fromBytes(Assets.getBytes('Assets/bat.aseprite'));
+    batSprite = Aseprite.fromBytes(Assets.getBytes('Assets/bat.aseprite'));
 
     graphics.beginFill(0xcccccc);
     graphics.drawRect(0, 0, 320, 240);

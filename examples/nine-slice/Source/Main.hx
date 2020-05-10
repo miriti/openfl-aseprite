@@ -1,19 +1,19 @@
 package;
 
-import openfl.text.TextFieldAutoSize;
-import openfl.text.TextFormat;
-import openfl.text.TextField;
-import aseprite.AsepriteSprite;
+import aseprite.Aseprite;
 import openfl.Assets;
 import openfl.display.Sprite;
 import openfl.events.MouseEvent;
+import openfl.text.TextField;
+import openfl.text.TextFieldAutoSize;
+import openfl.text.TextFormat;
 
 using Std;
 
 class Main extends Sprite {
-  var buttonSprite:AsepriteSprite;
+  var buttonSprite:Aseprite;
 
-  var button:AsepriteSprite;
+  var button:Aseprite;
 
   var buttonText:TextField;
 
@@ -22,7 +22,7 @@ class Main extends Sprite {
 
     scaleX = scaleY = 4;
 
-    buttonSprite = AsepriteSprite.fromBytes(Assets.getBytes('Assets/button.aseprite'));
+    buttonSprite = Aseprite.fromBytes(Assets.getBytes('Assets/button.aseprite'));
 
     button = buttonSprite.spawn('Slice 1', 60, 40);
     button.play();

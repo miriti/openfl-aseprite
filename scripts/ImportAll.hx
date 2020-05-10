@@ -1,1 +1,1 @@
-import aseprite.AsepriteSprite;
+import aseprite.Aseprite;

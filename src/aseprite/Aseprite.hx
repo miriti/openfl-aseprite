@@ -15,11 +15,11 @@ import openfl.events.Event;
   The main class in the library
 
   ```haxe
-  var sprite:AsepriteSprite = AsepriteSprite.fromBytes(Assets.getBytes('path/to/asepriteAsset.aseprite'));
+  var sprite:Aseprite = Aseprite.fromBytes(Assets.getBytes('path/to/asepriteAsset.aseprite'));
   addChild(sprite);
   ```
 **/
-class AsepriteSprite extends Sprite {
+class Aseprite extends Sprite {
   private var _alternatingDirection:Int = AnimationDirection.FORWARD;
   private var _ase:Ase;
   private var _bitmap:Bitmap;
@@ -285,8 +285,8 @@ class AsepriteSprite extends Sprite {
     @param useEnterFrame   If `true` add an `ENTER_FRAME` event listener to advence the animation
   **/
   public static function fromBytes(bytes:Bytes,
-      useEnterFrame:Bool = true):AsepriteSprite {
-    return new AsepriteSprite(Ase.fromBytes(bytes), useEnterFrame);
+      useEnterFrame:Bool = true):Aseprite {
+    return new Aseprite(Ase.fromBytes(bytes), useEnterFrame);
   }
 
   /**
@@ -298,7 +298,7 @@ class AsepriteSprite extends Sprite {
     @param spriteWidth    Width of the newly created sprite.
     @param spriteHeight   Height of the newly created sprite.
   **/
-  private function new(?ase:Ase, ?sprite:AsepriteSprite, ?slice:Slice,
+  private function new(?ase:Ase, ?sprite:Aseprite, ?slice:Slice,
       useEnterFrame:Bool = true, ?spriteWidth:Int, ?spriteHeight:Int) {
     super();
 
@@ -321,7 +321,7 @@ class AsepriteSprite extends Sprite {
 
     @param time Time in milliseconds
   **/
-  public function advance(time:Int):AsepriteSprite {
+  public function advance(time:Int):Aseprite {
     if (time < 0) // TODO
       throw 'TODO: time value can be negative';
 
@@ -338,7 +338,7 @@ class AsepriteSprite extends Sprite {
   /**
     Go to the next frame respecting the direction of the current animation
   **/
-  public function nextFrame():AsepriteSprite {
+  public function nextFrame():Aseprite {
     var currentDirection:Int = direction;
     if (direction == AnimationDirection.PING_PONG) {
       currentDirection = _alternatingDirection;
@@ -380,7 +380,7 @@ class AsepriteSprite extends Sprite {
   /**
     Pause the playback
   **/
-  public function pause():AsepriteSprite {
+  public function pause():Aseprite {
     _playing = false;
     return this;
   }
@@ -393,7 +393,7 @@ class AsepriteSprite extends Sprite {
     @param onFinished Callback that will be called when repeats are finished (won't be called if `repeats == -1`)
   **/
   public function play(?tagName:String = null, ?repeats:Int = -1,
-      ?onFinished:Void->Void = null):AsepriteSprite {
+      ?onFinished:Void->Void = null):Aseprite {
     if (tagName != null)
       currentTag = tagName;
     _playing = true;
@@ -410,23 +410,23 @@ class AsepriteSprite extends Sprite {
     @param spriteHeight Height of the newly created sprite.
   **/
   public function spawn(?sliceName:String, ?spriteWidth:Int,
-      ?spriteHeight:Int):AsepriteSprite {
-    return new AsepriteSprite(this, slices[sliceName], useEnterFrame,
-      spriteWidth, spriteHeight);
+      ?spriteHeight:Int):Aseprite {
+    return new Aseprite(this, slices[sliceName], useEnterFrame, spriteWidth,
+      spriteHeight);
   }
 
   /**
     Pause the animation and bring the playhead to the first frame of the animation or the current tag
   **/
-  public function stop():AsepriteSprite {
+  public function stop():Aseprite {
     pause();
     currentFrame = fromFrame;
     _currentRepeat = _repeats;
     return this;
   }
 
-  function copyFromSprite(sprite:AsepriteSprite, ?slice:Slice,
-      ?spriteWidth:Int, ?spriteHeight:Int) {
+  function copyFromSprite(sprite:Aseprite, ?slice:Slice, ?spriteWidth:Int,
+      ?spriteHeight:Int) {
     _ase = sprite.ase;
     _layers = sprite._layers;
     _palette = sprite._palette;
