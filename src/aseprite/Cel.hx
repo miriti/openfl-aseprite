@@ -30,11 +30,11 @@ class Cel extends BitmapData {
     var pixelInput:BytesInput = new BytesInput(celChunk.rawData);
     var pixels:ByteArray = new ByteArray(celChunk.width * celChunk.height * 4);
 
-    for (row in 0...celChunk.height) {
-      for (col in 0...celChunk.width) {
+    for (_ in 0...celChunk.height) {
+      for (_ in 0...celChunk.width) {
         var pixel:UInt = 0x00000000;
 
-        switch (sprite.aseprite.header.colorDepth) {
+        switch (sprite.ase.header.colorDepth) {
           case 32:
             pixel = pixelInput.read(4).rgba2argb();
           case 16:

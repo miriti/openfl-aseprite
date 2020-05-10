@@ -1,7 +1,7 @@
 package aseprite;
 
 import ase.AnimationDirection;
-import ase.Aseprite;
+import ase.Ase;
 import ase.chunks.ChunkType;
 import ase.chunks.LayerChunk;
 import ase.chunks.TagsChunk;
@@ -21,7 +21,7 @@ import openfl.events.Event;
 **/
 class AsepriteSprite extends Sprite {
   private var _alternatingDirection:Int = AnimationDirection.FORWARD;
-  private var _aseprite:Aseprite;
+  private var _ase:Ase;
   private var _bitmap:Bitmap;
   private var _currentRepeat:Int = 0;
   private var _direction:Int = AnimationDirection.FORWARD;
@@ -36,6 +36,7 @@ class AsepriteSprite extends Sprite {
   private var _palette:Palette;
   private var _playing:Bool = false;
   private var _repeats:Int = -1;
+  private var _slice:Slice = null;
   private var _slices:Map<String, Slice> = [];
 
   private var _tags:Map<String, aseprite.Tag> = [];
@@ -97,10 +98,10 @@ class AsepriteSprite extends Sprite {
   /**
     Parsed Aseprite file data
   **/
-  public var aseprite(get, never):Aseprite;
+  public var ase(get, never):Ase;
 
-  function get_aseprite():Aseprite
-    return _aseprite;
+  function get_ase():Ase
+    return _ase;
 
   /**
     Current frame index of the animation (0...frames.length)
@@ -172,6 +173,11 @@ class AsepriteSprite extends Sprite {
     return currentTag;
   }
 
+  public var isPlaying(get, never):Bool;
+
+  function get_isPlaying():Bool
+    return _playing;
+
   private var _totalDuration:Int = 0;
 
   /**
@@ -229,6 +235,15 @@ class AsepriteSprite extends Sprite {
     return _onTag;
 
   /**
+    If the sprite was created from a Slice represents the data of this Slice
+  **/
+  public var slice(get, never):Slice;
+
+  function get_slice():Slice {
+    return _slice;
+  }
+
+  /**
     Array of `Slice`s
   **/
   public var slices(get, never):Map<String, Slice>;
@@ -271,21 +286,20 @@ class AsepriteSprite extends Sprite {
   **/
   public static function fromBytes(bytes:Bytes,
       useEnterFrame:Bool = true):AsepriteSprite {
-    return new AsepriteSprite(Aseprite.fromBytes(bytes), useEnterFrame);
+    return new AsepriteSprite(Ase.fromBytes(bytes), useEnterFrame);
   }
 
   /**
     Constructor
 
-    @param aseprite       An Aseprite instance of a parser ase/aseprite file
+    @param aseprite       An Ase instance of a parser ase/aseprite file
     @param sprite         Base sprite
     @param useEnterFrame  If `true` add an `ENTER_FRAME` event listener to advence the animation
     @param spriteWidth    Width of the newly created sprite.
     @param spriteHeight   Height of the newly created sprite.
   **/
-  private function new(?aseprite:Aseprite, ?sprite:AsepriteSprite,
-      ?slice:Slice, useEnterFrame:Bool = true, ?spriteWidth:Int,
-      ?spriteHeight:Int) {
+  private function new(?aseprite:Ase, ?sprite:AsepriteSprite, ?slice:Slice,
+      useEnterFrame:Bool = true, ?spriteWidth:Int, ?spriteHeight:Int) {
     super();
 
     _bitmap = new Bitmap();
@@ -413,7 +427,7 @@ class AsepriteSprite extends Sprite {
 
   function copyFromSprite(sprite:AsepriteSprite, ?slice:Slice,
       ?spriteWidth:Int, ?spriteHeight:Int) {
-    _aseprite = sprite.aseprite;
+    _ase = sprite.ase;
     _layers = sprite._layers;
     _palette = sprite._palette;
     _frameTags = sprite._frameTags;
@@ -443,10 +457,10 @@ class AsepriteSprite extends Sprite {
     _lastTime = _currentTime;
   }
 
-  function parseAseprite(value:Aseprite):Aseprite {
-    if (value != _aseprite) {
-      _aseprite = value;
-      for (chunk in aseprite.frames[0].chunks) {
+  function parseAseprite(value:Ase):Ase {
+    if (value != _ase) {
+      _ase = value;
+      for (chunk in ase.frames[0].chunks) {
         switch (chunk.header.type) {
           case ChunkType.LAYER:
             _layers.push(cast chunk);
@@ -477,7 +491,7 @@ class AsepriteSprite extends Sprite {
         }
       }
 
-      for (frame in aseprite.frames) {
+      for (frame in ase.frames) {
         var newFrame:Frame = new Frame(this, frame);
         _totalDuration += newFrame.duration;
         _frames.push(newFrame);
@@ -492,7 +506,7 @@ class AsepriteSprite extends Sprite {
       currentFrame = 0;
     }
 
-    return aseprite;
+    return ase;
   }
 
   /**

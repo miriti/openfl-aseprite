@@ -29,32 +29,39 @@ class NineSlice extends Sprite {
 
   public static function generate(bitmapData:BitmapData,
       sliceKey:SliceKey):NineSliceSlices {
-    var result:NineSliceSlices = [[null, null, null], [null, null, null], [null, null, null]];
+    var result:NineSliceSlices = [for (_ in 0...3) [for (_ in 0...3) null]];
 
-    var cols:Array<Array<Int>> = [
-      [0, sliceKey.xCenter],
-      [sliceKey.xCenter, sliceKey.centerWidth],
-      [
-        sliceKey.xCenter + sliceKey.centerWidth,
-        bitmapData.width - (sliceKey.xCenter + sliceKey.centerWidth)
-      ]
+    var xs = [
+      sliceKey.xOrigin,
+      sliceKey.xOrigin + sliceKey.xCenter,
+      sliceKey.xOrigin + sliceKey.xCenter + sliceKey.centerWidth
     ];
 
-    var rows:Array<Array<Int>> = [
-      [0, sliceKey.yCenter],
-      [sliceKey.yCenter, sliceKey.centerHeight],
-      [
-        sliceKey.yCenter + sliceKey.centerHeight,
-        bitmapData.height - (sliceKey.yCenter + sliceKey.centerHeight)
-      ]
+    var ys = [
+      sliceKey.yOrigin,
+      sliceKey.yOrigin + sliceKey.yCenter,
+      sliceKey.yOrigin + sliceKey.yCenter + sliceKey.centerHeight
     ];
+
+    var widths = [
+      sliceKey.xCenter,
+      sliceKey.centerWidth,
+      sliceKey.width - (sliceKey.xCenter + sliceKey.centerWidth)
+    ];
+    var heights = [
+      sliceKey.yCenter,
+      sliceKey.centerHeight,
+      sliceKey.height - (sliceKey.yCenter + sliceKey.centerHeight)
+    ];
+
+    var zeroPoint = new Point(0, 0);
 
     for (row in 0...3) {
       for (col in 0...3) {
-        var slice = new BitmapData(cols[col][1], rows[row][1]);
+        var slice = new BitmapData(widths[col], heights[row]);
         slice.copyPixels(bitmapData,
-          new Rectangle(cols[col][0], rows[row][0], cols[col][1], rows[row][1]),
-          new Point(0, 0));
+          new Rectangle(xs[col], ys[row], widths[col], heights[row]),
+          zeroPoint);
         result[row][col] = slice;
       }
     }

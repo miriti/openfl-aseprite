@@ -88,8 +88,8 @@ class Frame {
 
         render9Slice(renderWidth, renderHeight);
       } else {
-        bitmapData = new BitmapData(sprite.aseprite.header.width,
-          sprite.aseprite.header.height, true, 0x00000000);
+        bitmapData = new BitmapData(sprite.ase.header.width,
+          sprite.ase.header.height, true, 0x00000000);
 
         _frame = frame;
 
@@ -193,6 +193,9 @@ class Frame {
     if (!(renderWidth != _renderWidth || renderHeight != _renderHeight)) {
       return;
     }
+
+    _renderWidth = renderWidth;
+    _renderHeight = renderHeight;
 
     if (bitmapData != null) {
       bitmapData.dispose();

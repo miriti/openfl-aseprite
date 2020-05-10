@@ -40,6 +40,6 @@ class Color {
   public static function indexed2argb(sprite:AsepriteSprite,
       index:Int):Null<UInt> {
     return
-      index == sprite.aseprite.header.paletteEntry ? 0x00000000 : (sprite.palette.entries.exists(index) ? sprite.palette.entries[index] : 0x00000000);
+      index == sprite.ase.header.paletteEntry ? 0x00000000 : (sprite.palette.entries.exists(index) ? sprite.palette.entries[index] : 0x00000000);
   }
 }
