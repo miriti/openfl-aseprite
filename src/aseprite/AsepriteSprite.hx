@@ -292,21 +292,21 @@ class AsepriteSprite extends Sprite {
   /**
     Constructor
 
-    @param aseprite       An Ase instance of a parser ase/aseprite file
+    @param ase            An Ase instance of a parser ase/aseprite file
     @param sprite         Base sprite
     @param useEnterFrame  If `true` add an `ENTER_FRAME` event listener to advence the animation
     @param spriteWidth    Width of the newly created sprite.
     @param spriteHeight   Height of the newly created sprite.
   **/
-  private function new(?aseprite:Ase, ?sprite:AsepriteSprite, ?slice:Slice,
+  private function new(?ase:Ase, ?sprite:AsepriteSprite, ?slice:Slice,
       useEnterFrame:Bool = true, ?spriteWidth:Int, ?spriteHeight:Int) {
     super();
 
     _bitmap = new Bitmap();
     addChild(_bitmap);
 
-    if (aseprite != null)
-      parseAseprite(aseprite);
+    if (ase != null)
+      parseAseprite(ase);
 
     if (sprite != null)
       copyFromSprite(sprite, slice, spriteWidth, spriteHeight);
