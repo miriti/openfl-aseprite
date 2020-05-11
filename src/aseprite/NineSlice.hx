@@ -8,25 +8,16 @@ import openfl.geom.Rectangle;
 
 typedef NineSliceSlices = Array<Array<BitmapData>>;
 
+/**
+  9Slice utilities
+**/
 class NineSlice extends Sprite {
-  public var slices(default, set):NineSliceSlices;
+  /**
+    Generate 9Slices from a `BitmapData`
 
-  function set_slices(value:NineSliceSlices):NineSliceSlices {
-    slices = value;
-
-    graphics.beginBitmapFill(slices[0][0]);
-    graphics.drawRect(0, 0, slices[0][0].width, slices[0][0].height);
-    graphics.endFill();
-
-    return slices;
-  }
-
-  public function new(slices:NineSliceSlices) {
-    super();
-
-    this.slices = slices;
-  }
-
+    @param bitmapData BitmapData
+    @param sliceKey   9Slice Slice Key
+  **/
   public static function generate(bitmapData:BitmapData,
       sliceKey:SliceKey):NineSliceSlices {
     var result:NineSliceSlices = [for (_ in 0...3) [for (_ in 0...3) null]];

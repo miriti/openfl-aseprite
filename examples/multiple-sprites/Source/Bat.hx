@@ -26,19 +26,18 @@ class Bat extends Sprite {
     sprite.y = -sprite.height / 2;
     addChild(sprite);
 
-    addEventListener(Event.ENTER_FRAME, onEnterFrame);
-
     randomState();
   }
 
   function randomState() {
     var states = ['front', 'left', 'right', 'back'];
-
     state = states[Math.floor(Math.random() * states.length)];
     time = Lib.getTimer();
   }
 
-  function onEnterFrame(event:Event) {
+  public function update(timeDelta:Int) {
+    sprite.advance(timeDelta);
+
     switch (state) {
       case 'front':
         y += 1;

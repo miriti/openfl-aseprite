@@ -25,7 +25,14 @@ typedef LayerDef = {
   Holds information regarding a single frame of the animation
 **/
 class Frame {
+  /**
+    Frame's bitmap data
+  **/
   public var bitmapData:BitmapData;
+
+  /**
+    Duration of the frame in milliseconds
+  **/
   public var duration(get, never):Int;
 
   function get_duration():Int {
@@ -34,14 +41,30 @@ class Frame {
 
   private var _frame:ase.Frame;
 
+  /**
+    Raw frame data parsed from the file
+  **/
   public var frame(get, never):ase.Frame;
 
   function get_frame():ase.Frame {
     return _frame;
   }
 
+  private var _index:Int;
+
+  /**
+    Frame index in the sprite
+  **/
+  public var index(get, never):Int;
+
+  function get_index():Int
+    return _index;
+
   private var _layers:Array<LayerDef> = [];
 
+  /**
+    Sprite layers
+  **/
   public var layers(get, never):Array<LayerDef>;
 
   function get_layers():Array<LayerDef> {
@@ -50,16 +73,22 @@ class Frame {
 
   private var _layersMap:Map<String, LayerDef> = [];
 
+  /**
+    Map of the sprite layers keyed by their names
+  **/
   public var layersMap(get, never):Map<String, LayerDef>;
 
   function get_layersMap():Map<String, LayerDef> {
     return _layersMap;
   }
 
-  public var nineSlices:NineSliceSlices;
+  var nineSlices:NineSliceSlices;
 
   var _tags:Array<String> = [];
 
+  /**
+    Array of tags this frame is tagged with
+  **/
   public var tags(get, never):Array<String>;
 
   function get_tags():Array<String> {
@@ -69,7 +98,18 @@ class Frame {
   var _renderWidth:Int;
   var _renderHeight:Int;
 
-  public function new(?frameBitmapData:BitmapData,
+  /**
+    Frame constructor
+
+    @param index
+    @param frameBitmapData
+    @param nineSlices
+    @param renderWidth
+    @param renderHeight
+    @param sprite
+    @param frame
+  **/
+  public function new(index:Int, ?frameBitmapData:BitmapData,
       ?nineSlices:NineSliceSlices, ?renderWidth:Int, ?renderHeight:Int,
       ?sprite:Aseprite, ?frame:ase.Frame) {
     if (frameBitmapData != null) {
@@ -156,7 +196,9 @@ class Frame {
   /**
     Creates a copy of the frame reusing the resources
 
-    @param slice
+    @param slicel       Slice to cut from the original sprite
+    @param spriteWidth  Width of the resulting frame
+    @param spriteHeight Height of the resulting frame
   **/
   public function copy(?slice:Slice, ?spriteWidth:Int,
       ?spriteHeight:Int):Frame {
@@ -164,31 +206,42 @@ class Frame {
 
     if (slice != null) {
       if (slice.chunk.has9Slices) {
-        copyFrame = new Frame(NineSlice.generate(bitmapData,
-          slice.chunk.sliceKeys[0]),
-          spriteWidth, spriteHeight);
+        var nineSlice:NineSliceSlices = slice.nineSliceCache[index];
+
+        if (nineSlice == null) {
+          nineSlice = NineSlice.generate(bitmapData, slice.firstKey);
+          slice.nineSliceCache[index] = nineSlice;
+        }
+
+        copyFrame = new Frame(index, nineSlice, spriteWidth, spriteHeight);
       } else {
-        var sliceBitmapData = new BitmapData(slice.chunk.sliceKeys[0].width,
-          slice.chunk.sliceKeys[0].height);
-        sliceBitmapData.copyPixels(bitmapData,
-          new Rectangle(slice.chunk.sliceKeys[0].xOrigin,
-            slice.chunk.sliceKeys[0].yOrigin, slice.chunk.sliceKeys[0].width,
-            slice.chunk.sliceKeys[0].height),
-          new Point(0, 0));
-        copyFrame = new Frame(sliceBitmapData);
+        var sliceBitmapData:BitmapData = slice.bitmapCache[index];
+
+        if (sliceBitmapData == null) {
+          sliceBitmapData = new BitmapData(slice.chunk.sliceKeys[0].width,
+            slice.chunk.sliceKeys[0].height);
+          sliceBitmapData.copyPixels(bitmapData,
+            new Rectangle(slice.chunk.sliceKeys[0].xOrigin,
+              slice.chunk.sliceKeys[0].yOrigin,
+              slice.chunk.sliceKeys[0].width, slice.chunk.sliceKeys[0].height),
+            new Point(0, 0));
+
+          slice.bitmapCache[index] = sliceBitmapData;
+        }
+        copyFrame = new Frame(index, sliceBitmapData);
       }
     } else {
-      copyFrame = new Frame(bitmapData);
+      copyFrame = new Frame(index, bitmapData);
     }
 
     copyFrame._frame = _frame;
     copyFrame._layers = _layers;
     copyFrame._layersMap = _layersMap;
     copyFrame._tags = _tags;
+
     return copyFrame;
   }
 
-  // TODO: Optimize
   function render9Slice(renderWidth:Int, renderHeight:Int) {
     if (!(renderWidth != _renderWidth || renderHeight != _renderHeight)) {
       return;
@@ -235,6 +288,12 @@ class Frame {
     bitmapData.draw(render);
   }
 
+  /**
+    Resize the frame
+
+    @param newWidth   New width of the frame
+    @param newHeight  New height of the frame
+  **/
   public function resize(newWidth:Int, newHeight:Int) {
     render9Slice(newWidth, newHeight);
   }

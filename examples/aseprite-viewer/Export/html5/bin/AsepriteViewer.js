@@ -893,9 +893,9 @@ ApplicationMain.create = function(config) {
 	ManifestResources.init(config);
 	var _this = app.meta;
 	if(__map_reserved["build"] != null) {
-		_this.setReserved("build","22");
+		_this.setReserved("build","32");
 	} else {
-		_this.h["build"] = "22";
+		_this.h["build"] = "32";
 	}
 	var _this1 = app.meta;
 	if(__map_reserved["company"] != null) {
@@ -4223,7 +4223,7 @@ var Main = function() {
 	var _gthis = this;
 	openfl_display_Sprite.call(this);
 	this.set_scaleX(this.set_scaleY(2));
-	this.sprite = aseprite_AsepriteSprite.fromBytes(openfl_utils__$ByteArray_ByteArray_$Impl_$.toBytes(openfl_utils_Assets.getBytes("assets/example.aseprite")));
+	this.sprite = aseprite_Aseprite.fromBytes(openfl_utils__$ByteArray_ByteArray_$Impl_$.toBytes(openfl_utils_Assets.getBytes("assets/example.aseprite")));
 	this.sprite.set_x((400 - this.sprite.get_width()) / 2);
 	this.sprite.play("walking");
 	this.addChild(this.sprite);
@@ -4813,6 +4813,34 @@ _$UInt_UInt_$Impl_$.toFloat = function(this1) {
 var ase_AnimationDirection = function() { };
 $hxClasses["ase.AnimationDirection"] = ase_AnimationDirection;
 ase_AnimationDirection.__name__ = "ase.AnimationDirection";
+var ase_Ase = $hx_exports["Ase"] = function() {
+	this.frames = [];
+};
+$hxClasses["ase.Ase"] = ase_Ase;
+ase_Ase.__name__ = "ase.Ase";
+ase_Ase.fromBytes = function(bytes) {
+	return ase_Ase.fromBytesInput(new haxe_io_BytesInput(bytes));
+};
+ase_Ase.fromBytesInput = function(bytesInput) {
+	var aseprite = new ase_Ase();
+	aseprite.header = new ase_AseHeader(bytesInput.read(128));
+	var _g = 0;
+	var _g1 = aseprite.header.frames;
+	while(_g < _g1) {
+		var frameNum = _g++;
+		var frameHeader = new ase_FrameHeader(bytesInput.read(16));
+		var frame = new ase_Frame(frameHeader,bytesInput.read(frameHeader.size - 16));
+		aseprite.frames.push(frame);
+	}
+	return aseprite;
+};
+ase_Ase.main = function() {
+};
+ase_Ase.prototype = {
+	header: null
+	,frames: null
+	,__class__: ase_Ase
+};
 var ase_AseHeader = function(headerData) {
 	var bytesInput = new haxe_io_BytesInput(headerData);
 	this.fileSize = bytesInput.readInt32();
@@ -4861,34 +4889,6 @@ ase_AseHeader.prototype = {
 	,gridHeight: null
 	,reserved: null
 	,__class__: ase_AseHeader
-};
-var ase_Aseprite = $hx_exports["Aseprite"] = function() {
-	this.frames = [];
-};
-$hxClasses["ase.Aseprite"] = ase_Aseprite;
-ase_Aseprite.__name__ = "ase.Aseprite";
-ase_Aseprite.fromBytes = function(bytes) {
-	return ase_Aseprite.fromBytesInput(new haxe_io_BytesInput(bytes));
-};
-ase_Aseprite.fromBytesInput = function(bytesInput) {
-	var aseprite = new ase_Aseprite();
-	aseprite.header = new ase_AseHeader(bytesInput.read(128));
-	var _g = 0;
-	var _g1 = aseprite.header.frames;
-	while(_g < _g1) {
-		var frameNum = _g++;
-		var frameHeader = new ase_FrameHeader(bytesInput.read(16));
-		var frame = new ase_Frame(frameHeader,bytesInput.read(frameHeader.size - 16));
-		aseprite.frames.push(frame);
-	}
-	return aseprite;
-};
-ase_Aseprite.main = function() {
-};
-ase_Aseprite.prototype = {
-	header: null
-	,frames: null
-	,__class__: ase_Aseprite
 };
 var ase_Frame = function(header,frameData) {
 	this.chunkTypes = new haxe_ds_IntMap();
@@ -5324,7 +5324,7 @@ ase_chunks_SliceKey.prototype = {
 	,yPivot: null
 	,__class__: ase_chunks_SliceKey
 };
-var aseprite_AsepriteSprite = function(aseprite1,useEnterFrame) {
+var aseprite_Aseprite = function(ase1,sprite,slice,useEnterFrame,spriteWidth,spriteHeight) {
 	if(useEnterFrame == null) {
 		useEnterFrame = true;
 	}
@@ -5332,8 +5332,8 @@ var aseprite_AsepriteSprite = function(aseprite1,useEnterFrame) {
 	this.currentTag = null;
 	this.currentFrame = 0;
 	this._tags = new haxe_ds_StringMap();
-	this._spriteLayers = { background : new openfl_display_Sprite(), image : new openfl_display_Sprite()};
-	this._slices = [];
+	this._slices = new haxe_ds_StringMap();
+	this._slice = null;
 	this._repeats = -1;
 	this._playing = false;
 	this._onTag = [];
@@ -5346,23 +5346,30 @@ var aseprite_AsepriteSprite = function(aseprite1,useEnterFrame) {
 	this._currentRepeat = 0;
 	this._alternatingDirection = 0;
 	openfl_display_Sprite.call(this);
-	this.set_aseprite(aseprite1);
+	this._bitmap = new openfl_display_Bitmap();
+	this.addChild(this._bitmap);
+	if(ase1 != null) {
+		this.parseAseprite(ase1);
+	}
+	if(sprite != null) {
+		this.copyFromSprite(sprite,slice,spriteWidth,spriteHeight);
+	}
 	this.set_useEnterFrame(useEnterFrame);
-	this.addChild(this._spriteLayers.background);
-	this.addChild(this._spriteLayers.image);
 	this.addEventListener("addedToStage",$bind(this,this.onAddedToStage));
 };
-$hxClasses["aseprite.AsepriteSprite"] = aseprite_AsepriteSprite;
-aseprite_AsepriteSprite.__name__ = "aseprite.AsepriteSprite";
-aseprite_AsepriteSprite.fromBytes = function(bytes,useEnterFrame) {
+$hxClasses["aseprite.Aseprite"] = aseprite_Aseprite;
+aseprite_Aseprite.__name__ = "aseprite.Aseprite";
+aseprite_Aseprite.fromBytes = function(bytes,useEnterFrame) {
 	if(useEnterFrame == null) {
 		useEnterFrame = true;
 	}
-	return new aseprite_AsepriteSprite(ase_Aseprite.fromBytes(bytes),useEnterFrame);
+	return new aseprite_Aseprite(ase_Ase.fromBytes(bytes),null,null,useEnterFrame);
 };
-aseprite_AsepriteSprite.__super__ = openfl_display_Sprite;
-aseprite_AsepriteSprite.prototype = $extend(openfl_display_Sprite.prototype,{
+aseprite_Aseprite.__super__ = openfl_display_Sprite;
+aseprite_Aseprite.prototype = $extend(openfl_display_Sprite.prototype,{
 	_alternatingDirection: null
+	,_ase: null
+	,_bitmap: null
 	,_currentRepeat: null
 	,_direction: null
 	,_frameTags: null
@@ -5376,8 +5383,8 @@ aseprite_AsepriteSprite.prototype = $extend(openfl_display_Sprite.prototype,{
 	,_palette: null
 	,_playing: null
 	,_repeats: null
+	,_slice: null
 	,_slices: null
-	,_spriteLayers: null
 	,_tags: null
 	,get_direction: function() {
 		if(this.currentTag != null) {
@@ -5421,94 +5428,8 @@ aseprite_AsepriteSprite.prototype = $extend(openfl_display_Sprite.prototype,{
 	,get_palette: function() {
 		return this._palette;
 	}
-	,aseprite: null
-	,set_aseprite: function(value) {
-		if(value != this.aseprite) {
-			this.aseprite = value;
-			var _g = 0;
-			var _g1 = this.aseprite.frames[0].chunks;
-			while(_g < _g1.length) {
-				var chunk = _g1[_g];
-				++_g;
-				switch(chunk.header.type) {
-				case 8196:
-					this._layers.push(chunk);
-					break;
-				case 8216:
-					this._frameTags = chunk;
-					var _g2 = 0;
-					var _g11 = this._frameTags.tags;
-					while(_g2 < _g11.length) {
-						var frameTagData = _g11[_g2];
-						++_g2;
-						var animationTag = new aseprite_Tag(frameTagData);
-						var key = frameTagData.tagName;
-						var _this = this._tags;
-						if(__map_reserved[key] != null ? _this.existsReserved(key) : _this.h.hasOwnProperty(key)) {
-							var num = 1;
-							var newName = "" + frameTagData.tagName + "_" + num;
-							while(true) {
-								var _this1 = this._tags;
-								if(!(__map_reserved[newName] != null ? _this1.existsReserved(newName) : _this1.h.hasOwnProperty(newName))) {
-									break;
-								}
-								++num;
-								newName = "" + frameTagData.tagName + "_" + num;
-							}
-							haxe_Log.trace("WARNING: This file already contains tag named \"" + frameTagData.tagName + "\". It will be automatically reanamed to \"" + newName + "\"",{ fileName : "aseprite/AsepriteSprite.hx", lineNumber : 131, className : "aseprite.AsepriteSprite", methodName : "set_aseprite"});
-							var _this2 = this._tags;
-							if(__map_reserved[newName] != null) {
-								_this2.setReserved(newName,animationTag);
-							} else {
-								_this2.h[newName] = animationTag;
-							}
-						} else {
-							var k = frameTagData.tagName;
-							var _this3 = this._tags;
-							if(__map_reserved[k] != null) {
-								_this3.setReserved(k,animationTag);
-							} else {
-								_this3.h[k] = animationTag;
-							}
-						}
-					}
-					break;
-				case 8217:
-					this._palette = new aseprite_Palette(chunk);
-					break;
-				case 8226:
-					this._slices.push(new aseprite_Slice(chunk));
-					break;
-				}
-			}
-			this._frames = [];
-			var _g21 = 0;
-			var _g3 = this.aseprite.frames;
-			while(_g21 < _g3.length) {
-				var frame = _g3[_g21];
-				++_g21;
-				var newFrame = new aseprite_Frame(this,frame);
-				newFrame.set_visible(false);
-				newFrame.startTime = this._totalDuration;
-				this._totalDuration += newFrame.get_duration();
-				this._frames.push(newFrame);
-				this._spriteLayers.image.addChild(newFrame);
-			}
-			var _this4 = this.get_tags();
-			var tag = new haxe_ds__$StringMap_StringMapIterator(_this4,_this4.arrayKeys());
-			while(tag.hasNext()) {
-				var tag1 = tag.next();
-				var _g5 = tag1.get_chunk().fromFrame;
-				var _g6 = tag1.get_chunk().toFrame + 1;
-				while(_g5 < _g6) {
-					var frameIndex = _g5++;
-					this.get_frames()[frameIndex].get_tags().push(tag1.get_name());
-				}
-			}
-			this._frames[0].set_visible(true);
-			this.set_currentFrame(0);
-		}
-		return this.aseprite;
+	,get_ase: function() {
+		return this._ase;
 	}
 	,currentFrame: null
 	,set_currentFrame: function(value) {
@@ -5518,11 +5439,13 @@ aseprite_AsepriteSprite.prototype = $extend(openfl_display_Sprite.prototype,{
 		if(value >= this._frames.length) {
 			value = this._frames.length - 1;
 		}
+		if(this._bitmap.get_bitmapData() == null) {
+			this._bitmap.set_bitmapData(this._frames[value].bitmapData);
+		}
 		if(value != this.currentFrame) {
 			var prevFrame = this.currentFrame;
-			this._frames[this.currentFrame].set_visible(false);
 			this.currentFrame = value;
-			this._frames[this.currentFrame].set_visible(true);
+			this._bitmap.set_bitmapData(this._frames[this.currentFrame].bitmapData);
 			var _g = 0;
 			var _g1 = this._onFrame;
 			while(_g < _g1.length) {
@@ -5621,6 +5544,9 @@ aseprite_AsepriteSprite.prototype = $extend(openfl_display_Sprite.prototype,{
 		}
 		return this.currentTag;
 	}
+	,get_isPlaying: function() {
+		return this._playing;
+	}
 	,_totalDuration: null
 	,get_totalDuration: function() {
 		return this._totalDuration;
@@ -5636,6 +5562,9 @@ aseprite_AsepriteSprite.prototype = $extend(openfl_display_Sprite.prototype,{
 	}
 	,get_onTag: function() {
 		return this._onTag;
+	}
+	,get_slice: function() {
+		return this._slice;
 	}
 	,get_slices: function() {
 		return this._slices;
@@ -5716,11 +5645,33 @@ aseprite_AsepriteSprite.prototype = $extend(openfl_display_Sprite.prototype,{
 		this._onFinished = onFinished;
 		return this;
 	}
+	,spawn: function(sliceName,spriteWidth,spriteHeight,useEnterFrame) {
+		var _this = this.get_slices();
+		return new aseprite_Aseprite(null,this,__map_reserved[sliceName] != null ? _this.getReserved(sliceName) : _this.h[sliceName],useEnterFrame == null ? this.useEnterFrame : useEnterFrame,spriteWidth,spriteHeight);
+	}
 	,stop: function() {
 		this.pause();
 		this.set_currentFrame(this.get_fromFrame());
 		this._currentRepeat = this._repeats;
 		return this;
+	}
+	,copyFromSprite: function(sprite,slice,spriteWidth,spriteHeight) {
+		this._ase = sprite.get_ase();
+		this._layers = sprite._layers;
+		this._palette = sprite._palette;
+		this._frameTags = sprite._frameTags;
+		this._tags = sprite._tags;
+		this._slices = sprite._slices;
+		this._totalDuration = sprite._totalDuration;
+		var _g = 0;
+		var _g1 = sprite.get_frames();
+		while(_g < _g1.length) {
+			var frame = _g1[_g];
+			++_g;
+			var copyFrame = frame.copy(slice,spriteWidth,spriteHeight);
+			this._frames.push(copyFrame);
+		}
+		this.set_currentFrame(0);
 	}
 	,onAddedToStage: function(e) {
 		this._lastTime = openfl_Lib.getTimer();
@@ -5733,7 +5684,108 @@ aseprite_AsepriteSprite.prototype = $extend(openfl_display_Sprite.prototype,{
 		}
 		this._lastTime = _currentTime;
 	}
-	,__class__: aseprite_AsepriteSprite
+	,parseAseprite: function(value) {
+		if(value != this._ase) {
+			this._ase = value;
+			var _g = 0;
+			var _g1 = this.get_ase().frames[0].chunks;
+			while(_g < _g1.length) {
+				var chunk = _g1[_g];
+				++_g;
+				switch(chunk.header.type) {
+				case 8196:
+					this._layers.push(chunk);
+					break;
+				case 8216:
+					this._frameTags = chunk;
+					var _g2 = 0;
+					var _g11 = this._frameTags.tags;
+					while(_g2 < _g11.length) {
+						var frameTagData = _g11[_g2];
+						++_g2;
+						var animationTag = new aseprite_Tag(frameTagData);
+						var key = frameTagData.tagName;
+						var _this = this._tags;
+						if(__map_reserved[key] != null ? _this.existsReserved(key) : _this.h.hasOwnProperty(key)) {
+							var num = 1;
+							var newName = "" + frameTagData.tagName + "_" + num;
+							while(true) {
+								var _this1 = this._tags;
+								if(!(__map_reserved[newName] != null ? _this1.existsReserved(newName) : _this1.h.hasOwnProperty(newName))) {
+									break;
+								}
+								++num;
+								newName = "" + frameTagData.tagName + "_" + num;
+							}
+							haxe_Log.trace("WARNING: This file already contains tag named \"" + frameTagData.tagName + "\". It will be automatically reanamed to \"" + newName + "\"",{ fileName : "aseprite/Aseprite.hx", lineNumber : 484, className : "aseprite.Aseprite", methodName : "parseAseprite"});
+							var _this2 = this._tags;
+							if(__map_reserved[newName] != null) {
+								_this2.setReserved(newName,animationTag);
+							} else {
+								_this2.h[newName] = animationTag;
+							}
+						} else {
+							var k = frameTagData.tagName;
+							var _this3 = this._tags;
+							if(__map_reserved[k] != null) {
+								_this3.setReserved(k,animationTag);
+							} else {
+								_this3.h[k] = animationTag;
+							}
+						}
+					}
+					break;
+				case 8217:
+					this._palette = new aseprite_Palette(chunk);
+					break;
+				case 8226:
+					var newSlice = new aseprite_Slice(chunk);
+					var this1 = this._slices;
+					var k1 = newSlice.get_name();
+					var _this4 = this1;
+					if(__map_reserved[k1] != null) {
+						_this4.setReserved(k1,newSlice);
+					} else {
+						_this4.h[k1] = newSlice;
+					}
+					break;
+				}
+			}
+			var _g21 = 0;
+			var _g3 = this.get_ase().frames.length;
+			while(_g21 < _g3) {
+				var index = _g21++;
+				var frame = this.get_ase().frames[index];
+				var newFrame = new aseprite_Frame(index,null,null,null,null,this,frame);
+				this._totalDuration += newFrame.get_duration();
+				this._frames.push(newFrame);
+			}
+			var _this5 = this.get_tags();
+			var tag = new haxe_ds__$StringMap_StringMapIterator(_this5,_this5.arrayKeys());
+			while(tag.hasNext()) {
+				var tag1 = tag.next();
+				var _g5 = tag1.get_chunk().fromFrame;
+				var _g6 = tag1.get_chunk().toFrame + 1;
+				while(_g5 < _g6) {
+					var frameIndex = _g5++;
+					this.get_frames()[frameIndex].get_tags().push(tag1.get_name());
+				}
+			}
+			this.set_currentFrame(0);
+		}
+		return this.get_ase();
+	}
+	,resize: function(newWidth,newHeight) {
+		var _g = 0;
+		var _g1 = this.get_frames();
+		while(_g < _g1.length) {
+			var frame = _g1[_g];
+			++_g;
+			frame.resize(newWidth,newHeight);
+		}
+		this._bitmap.set_bitmapData(this.get_frames()[this.currentFrame].bitmapData);
+	}
+	,__class__: aseprite_Aseprite
 });
 var lime_math_Vector2 = function(x,y) {
 	if(y == null) {
@@ -7353,13 +7405,13 @@ var aseprite_Cel = function(sprite,celChunk) {
 	var _g = 0;
 	var _g1 = celChunk.height;
 	while(_g < _g1) {
-		var row = _g++;
+		var _ = _g++;
 		var _g2 = 0;
 		var _g11 = celChunk.width;
 		while(_g2 < _g11) {
-			var col = _g2++;
+			var _1 = _g2++;
 			var pixel = 0;
-			switch(sprite.aseprite.header.colorDepth) {
+			switch(sprite.get_ase().header.colorDepth) {
 			case 8:
 				pixel = aseprite_Color.indexed2argb(sprite,pixelInput.readByte());
 				break;
@@ -7409,7 +7461,7 @@ aseprite_Color.grayscale2argb = function(bytePair) {
 	return rgba.getInt32(0);
 };
 aseprite_Color.indexed2argb = function(sprite,index) {
-	if(index == sprite.aseprite.header.paletteEntry) {
+	if(index == sprite.get_ase().header.paletteEntry) {
 		return 0;
 	} else if(sprite.get_palette().get_entries().h.hasOwnProperty(index)) {
 		return sprite.get_palette().get_entries().h[index];
@@ -7417,450 +7469,81 @@ aseprite_Color.indexed2argb = function(sprite,index) {
 		return 0;
 	}
 };
-var openfl_display_Bitmap = function(bitmapData,pixelSnapping,smoothing) {
-	if(smoothing == null) {
-		smoothing = false;
-	}
-	openfl_display_DisplayObject.call(this);
-	this.__bitmapData = bitmapData;
-	this.pixelSnapping = pixelSnapping;
-	this.smoothing = smoothing;
-	if(pixelSnapping == null) {
-		this.pixelSnapping = 1;
-	}
-};
-$hxClasses["openfl.display.Bitmap"] = openfl_display_Bitmap;
-openfl_display_Bitmap.__name__ = "openfl.display.Bitmap";
-openfl_display_Bitmap.__super__ = openfl_display_DisplayObject;
-openfl_display_Bitmap.prototype = $extend(openfl_display_DisplayObject.prototype,{
-	pixelSnapping: null
-	,smoothing: null
-	,__image: null
-	,__bitmapData: null
-	,__imageVersion: null
-	,__enterFrame: function(deltaTime) {
-		if(this.__bitmapData != null && this.__bitmapData.image != null && this.__bitmapData.image.version != this.__imageVersion) {
-			if(!this.__renderDirty) {
-				this.__renderDirty = true;
-				this.__setParentRenderDirty();
-			}
-		}
-	}
-	,__getBounds: function(rect,matrix) {
-		var bounds = openfl_geom_Rectangle.__pool.get();
-		if(this.__bitmapData != null) {
-			bounds.setTo(0,0,this.__bitmapData.width,this.__bitmapData.height);
-		} else {
-			bounds.setTo(0,0,0,0);
-		}
-		bounds.__transform(bounds,matrix);
-		rect.__expand(bounds.x,bounds.y,bounds.width,bounds.height);
-		openfl_geom_Rectangle.__pool.release(bounds);
-	}
-	,__hitTest: function(x,y,shapeFlag,stack,interactiveOnly,hitObject) {
-		if(!hitObject.get_visible() || this.__isMask || this.__bitmapData == null) {
-			return false;
-		}
-		if(this.get_mask() != null && !this.get_mask().__hitTestMask(x,y)) {
-			return false;
-		}
-		this.__getRenderTransform();
-		var _this = this.__renderTransform;
-		var norm = _this.a * _this.d - _this.b * _this.c;
-		var px = norm == 0 ? -_this.tx : 1.0 / norm * (_this.c * (_this.ty - y) + _this.d * (x - _this.tx));
-		var _this1 = this.__renderTransform;
-		var norm1 = _this1.a * _this1.d - _this1.b * _this1.c;
-		var py = norm1 == 0 ? -_this1.ty : 1.0 / norm1 * (_this1.a * (y - _this1.ty) + _this1.b * (_this1.tx - x));
-		if(px > 0 && py > 0 && px <= this.__bitmapData.width && py <= this.__bitmapData.height) {
-			if(this.__scrollRect != null && !this.__scrollRect.contains(px,py)) {
-				return false;
-			}
-			if(stack != null && !interactiveOnly) {
-				stack.push(hitObject);
-			}
-			return true;
-		}
-		return false;
-	}
-	,__hitTestMask: function(x,y) {
-		if(this.__bitmapData == null) {
-			return false;
-		}
-		this.__getRenderTransform();
-		var _this = this.__renderTransform;
-		var norm = _this.a * _this.d - _this.b * _this.c;
-		var px = norm == 0 ? -_this.tx : 1.0 / norm * (_this.c * (_this.ty - y) + _this.d * (x - _this.tx));
-		var _this1 = this.__renderTransform;
-		var norm1 = _this1.a * _this1.d - _this1.b * _this1.c;
-		var py = norm1 == 0 ? -_this1.ty : 1.0 / norm1 * (_this1.a * (y - _this1.ty) + _this1.b * (_this1.tx - x));
-		if(px > 0 && py > 0 && px <= this.__bitmapData.width && py <= this.__bitmapData.height) {
-			return true;
-		}
-		return false;
-	}
-	,__renderCairo: function(renderer) {
-	}
-	,__renderCairoMask: function(renderer) {
-		renderer.cairo.rectangle(0,0,this.get_width(),this.get_height());
-	}
-	,__renderCanvas: function(renderer) {
-		this.__updateCacheBitmap(renderer,false);
-		if(this.__bitmapData != null && this.__bitmapData.image != null) {
-			this.__imageVersion = this.__bitmapData.image.version;
-		}
-		if(this.__cacheBitmap != null && !this.__isCacheBitmapRender) {
-			var bitmap = this.__cacheBitmap;
-			if(!(!bitmap.__renderable)) {
-				var alpha = renderer.__getAlpha(bitmap.__worldAlpha);
-				if(alpha > 0 && bitmap.__bitmapData != null && bitmap.__bitmapData.__isValid && bitmap.__bitmapData.readable) {
-					var context = renderer.context;
-					renderer.__setBlendMode(bitmap.__worldBlendMode);
-					renderer.__pushMaskObject(bitmap,false);
-					lime__$internal_graphics_ImageCanvasUtil.convertToCanvas(bitmap.__bitmapData.image);
-					context.globalAlpha = alpha;
-					var scrollRect = bitmap.__scrollRect;
-					renderer.setTransform(bitmap.__renderTransform,context);
-					if(!renderer.__allowSmoothing || !bitmap.smoothing) {
-						context.imageSmoothingEnabled = false;
-					}
-					if(scrollRect == null) {
-						context.drawImage(bitmap.__bitmapData.image.get_src(),0,0,bitmap.__bitmapData.image.width,bitmap.__bitmapData.image.height);
-					} else {
-						context.drawImage(bitmap.__bitmapData.image.get_src(),scrollRect.x,scrollRect.y,scrollRect.width,scrollRect.height);
-					}
-					if(!renderer.__allowSmoothing || !bitmap.smoothing) {
-						context.imageSmoothingEnabled = true;
-					}
-					renderer.__popMaskObject(bitmap,false);
-				}
-			}
-		} else {
-			if(!(this.opaqueBackground == null && this.__graphics == null)) {
-				if(!(!this.__renderable)) {
-					var alpha1 = renderer.__getAlpha(this.__worldAlpha);
-					if(!(alpha1 <= 0)) {
-						if(this.opaqueBackground != null && !this.__isCacheBitmapRender && this.get_width() > 0 && this.get_height() > 0) {
-							renderer.__setBlendMode(this.__worldBlendMode);
-							renderer.__pushMaskObject(this);
-							var context1 = renderer.context;
-							renderer.setTransform(this.__renderTransform,context1);
-							var color = this.opaqueBackground;
-							context1.fillStyle = "rgb(" + (color >>> 16 & 255) + "," + (color >>> 8 & 255) + "," + (color & 255) + ")";
-							context1.fillRect(0,0,this.get_width(),this.get_height());
-							renderer.__popMaskObject(this);
-						}
-						if(this.__graphics != null) {
-							if(!(!this.__renderable)) {
-								var alpha2 = renderer.__getAlpha(this.__worldAlpha);
-								if(!(alpha2 <= 0)) {
-									var graphics = this.__graphics;
-									if(graphics != null) {
-										openfl__$internal_renderer_canvas_CanvasGraphics.render(graphics,renderer);
-										var width = graphics.__width;
-										var height = graphics.__height;
-										var canvas = graphics.__canvas;
-										if(canvas != null && graphics.__visible && width >= 1 && height >= 1) {
-											var transform = graphics.__worldTransform;
-											var context2 = renderer.context;
-											var scrollRect1 = this.__scrollRect;
-											var scale9Grid = this.__worldScale9Grid;
-											if(scrollRect1 == null || scrollRect1.width > 0 && scrollRect1.height > 0) {
-												renderer.__setBlendMode(this.__worldBlendMode);
-												renderer.__pushMaskObject(this);
-												context2.globalAlpha = alpha2;
-												if(scale9Grid != null && transform.b == 0 && transform.c == 0) {
-													context2.setTransform(1,0,0,1,transform.tx,transform.ty);
-													var bounds = graphics.__bounds;
-													var scaleX = graphics.__renderTransform.a;
-													var scaleY = graphics.__renderTransform.d;
-													var renderScaleX = transform.a;
-													var renderScaleY = transform.d;
-													var left = Math.max(1,Math.round(scale9Grid.x * scaleX));
-													var top = Math.round(scale9Grid.y * scaleY);
-													var right = Math.max(1,Math.round((bounds.get_right() - scale9Grid.get_right()) * scaleX));
-													var bottom = Math.round((bounds.get_bottom() - scale9Grid.get_bottom()) * scaleY);
-													var centerWidth = Math.round(scale9Grid.width * scaleX);
-													var centerHeight = Math.round(scale9Grid.height * scaleY);
-													var renderLeft = Math.round(scale9Grid.x * renderScaleX);
-													var renderTop = Math.round(scale9Grid.y * renderScaleY);
-													var renderRight = Math.round((bounds.get_right() - scale9Grid.get_right()) * renderScaleX);
-													var renderBottom = Math.round((bounds.get_bottom() - scale9Grid.get_bottom()) * renderScaleY);
-													var renderCenterWidth = Math.round(width * renderScaleX) - renderLeft - renderRight;
-													var renderCenterHeight = Math.round(height * renderScaleY) - renderTop - renderBottom;
-													renderer.applySmoothing(context2,false);
-													if(centerWidth != 0 && centerHeight != 0) {
-														context2.drawImage(canvas,0,0,left,top,0,0,renderLeft,renderTop);
-														context2.drawImage(canvas,left,0,centerWidth,top,renderLeft,0,renderCenterWidth,renderTop);
-														context2.drawImage(canvas,left + centerWidth,0,right,top,renderLeft + renderCenterWidth,0,renderRight,renderTop);
-														context2.drawImage(canvas,0,top,left,centerHeight,0,renderTop,renderLeft,renderCenterHeight);
-														context2.drawImage(canvas,left,top,centerWidth,centerHeight,renderLeft,renderTop,renderCenterWidth,renderCenterHeight);
-														context2.drawImage(canvas,left + centerWidth,top,right,centerHeight,renderLeft + renderCenterWidth,renderTop,renderRight,renderCenterHeight);
-														context2.drawImage(canvas,0,top + centerHeight,left,bottom,0,renderTop + renderCenterHeight,renderLeft,renderBottom);
-														context2.drawImage(canvas,left,top + centerHeight,centerWidth,bottom,renderLeft,renderTop + renderCenterHeight,renderCenterWidth,renderBottom);
-														context2.drawImage(canvas,left + centerWidth,top + centerHeight,right,bottom,renderLeft + renderCenterWidth,renderTop + renderCenterHeight,renderRight,renderBottom);
-													} else if(centerWidth == 0 && centerHeight != 0) {
-														var renderWidth = renderLeft + renderCenterWidth + renderRight;
-														context2.drawImage(canvas,0,0,width,top,0,0,renderWidth,renderTop);
-														context2.drawImage(canvas,0,top,width,centerHeight,0,renderTop,renderWidth,renderCenterHeight);
-														context2.drawImage(canvas,0,top + centerHeight,width,bottom,0,renderTop + renderCenterHeight,renderWidth,renderBottom);
-													} else if(centerHeight == 0 && centerWidth != 0) {
-														var renderHeight = renderTop + renderCenterHeight + renderBottom;
-														context2.drawImage(canvas,0,0,left,height,0,0,renderLeft,renderHeight);
-														context2.drawImage(canvas,left,0,centerWidth,height,renderLeft,0,renderCenterWidth,renderHeight);
-														context2.drawImage(canvas,left + centerWidth,0,right,height,renderLeft + renderCenterWidth,0,renderRight,renderHeight);
-													}
-												} else {
-													renderer.setTransform(transform,context2);
-													if(renderer.__isDOM) {
-														var reverseScale = 1 / renderer.pixelRatio;
-														context2.scale(reverseScale,reverseScale);
-													}
-													context2.drawImage(canvas,0,0,width,height);
-												}
-												renderer.__popMaskObject(this);
-											}
-										}
-									}
-								}
-							}
-						}
-					}
-				}
-			}
-			if(!(!this.__renderable)) {
-				var alpha3 = renderer.__getAlpha(this.__worldAlpha);
-				if(alpha3 > 0 && this.__bitmapData != null && this.__bitmapData.__isValid && this.__bitmapData.readable) {
-					var context3 = renderer.context;
-					renderer.__setBlendMode(this.__worldBlendMode);
-					renderer.__pushMaskObject(this,false);
-					lime__$internal_graphics_ImageCanvasUtil.convertToCanvas(this.__bitmapData.image);
-					context3.globalAlpha = alpha3;
-					var scrollRect2 = this.__scrollRect;
-					renderer.setTransform(this.__renderTransform,context3);
-					if(!renderer.__allowSmoothing || !this.smoothing) {
-						context3.imageSmoothingEnabled = false;
-					}
-					if(scrollRect2 == null) {
-						context3.drawImage(this.__bitmapData.image.get_src(),0,0,this.__bitmapData.image.width,this.__bitmapData.image.height);
-					} else {
-						context3.drawImage(this.__bitmapData.image.get_src(),scrollRect2.x,scrollRect2.y,scrollRect2.width,scrollRect2.height);
-					}
-					if(!renderer.__allowSmoothing || !this.smoothing) {
-						context3.imageSmoothingEnabled = true;
-					}
-					renderer.__popMaskObject(this,false);
-				}
-			}
-		}
-		this.__renderEvent(renderer);
-	}
-	,__renderCanvasMask: function(renderer) {
-		renderer.context.rect(0,0,this.get_width(),this.get_height());
-	}
-	,__renderDOM: function(renderer) {
-		this.__updateCacheBitmap(renderer,false);
-		if(this.__cacheBitmap != null && !this.__isCacheBitmapRender) {
-			this.__renderDOMClear(renderer);
-			this.__cacheBitmap.stage = this.stage;
-			var bitmap = this.__cacheBitmap;
-			if(bitmap.stage != null && bitmap.__worldVisible && bitmap.__renderable && bitmap.__bitmapData != null && bitmap.__bitmapData.__isValid && bitmap.__bitmapData.readable) {
-				renderer.__pushMaskObject(bitmap);
-				if(bitmap.__bitmapData.image.buffer.__srcImage != null) {
-					openfl__$internal_renderer_dom_DOMBitmap.renderImage(bitmap,renderer);
-				} else {
-					openfl__$internal_renderer_dom_DOMBitmap.renderCanvas(bitmap,renderer);
-				}
-				renderer.__popMaskObject(bitmap);
-			} else {
-				openfl__$internal_renderer_dom_DOMBitmap.clear(bitmap,renderer);
-			}
-		} else {
-			var tmp = this.opaqueBackground != null && !this.__isCacheBitmapRender && this.get_width() > 0 && this.get_height() > 0;
-			var graphics = this.__graphics;
-			if(this.stage != null && this.__worldVisible && this.__renderable && graphics != null) {
-				openfl__$internal_renderer_canvas_CanvasGraphics.render(graphics,renderer.__canvasRenderer);
-				if(graphics.__softwareDirty || this.__worldAlphaChanged || this.__canvas != graphics.__canvas) {
-					if(graphics.__canvas != null) {
-						if(this.__canvas != graphics.__canvas) {
-							if(this.__canvas != null) {
-								renderer.element.removeChild(this.__canvas);
-							}
-							this.__canvas = graphics.__canvas;
-							this.__context = graphics.__context;
-							renderer.__initializeElement(this,this.__canvas);
-						}
-					} else {
-						openfl__$internal_renderer_dom_DOMShape.clear(this,renderer);
-					}
-				}
-				if(this.__canvas != null) {
-					renderer.__pushMaskObject(this);
-					var cacheTransform = this.__renderTransform;
-					this.__renderTransform = graphics.__worldTransform;
-					if(graphics.__transformDirty) {
-						graphics.__transformDirty = false;
-						this.__renderTransformChanged = true;
-					}
-					renderer.__updateClip(this);
-					renderer.__applyStyle(this,true,true,true);
-					this.__renderTransform = cacheTransform;
-					renderer.__popMaskObject(this);
-				}
-			} else {
-				openfl__$internal_renderer_dom_DOMShape.clear(this,renderer);
-			}
-			if(this.stage != null && this.__worldVisible && this.__renderable && this.__bitmapData != null && this.__bitmapData.__isValid && this.__bitmapData.readable) {
-				renderer.__pushMaskObject(this);
-				if(this.__bitmapData.image.buffer.__srcImage != null) {
-					openfl__$internal_renderer_dom_DOMBitmap.renderImage(this,renderer);
-				} else {
-					openfl__$internal_renderer_dom_DOMBitmap.renderCanvas(this,renderer);
-				}
-				renderer.__popMaskObject(this);
-			} else {
-				openfl__$internal_renderer_dom_DOMBitmap.clear(this,renderer);
-			}
-		}
-		this.__renderEvent(renderer);
-	}
-	,__renderDOMClear: function(renderer) {
-		openfl__$internal_renderer_dom_DOMBitmap.clear(this,renderer);
-	}
-	,__renderGL: function(renderer) {
-		this.__updateCacheBitmap(renderer,false);
-		if(this.__bitmapData != null && this.__bitmapData.image != null) {
-			this.__imageVersion = this.__bitmapData.image.version;
-		}
-		if(this.__cacheBitmap != null && !this.__isCacheBitmapRender) {
-			openfl__$internal_renderer_context3D_Context3DBitmap.render(this.__cacheBitmap,renderer);
-		} else {
-			if(!(this.opaqueBackground == null && this.__graphics == null)) {
-				if(!(!this.__renderable || this.__worldAlpha <= 0)) {
-					if(this.opaqueBackground != null && !this.__isCacheBitmapRender && this.get_width() > 0 && this.get_height() > 0) {
-						renderer.__setBlendMode(this.__worldBlendMode);
-						renderer.__pushMaskObject(this);
-						var context = renderer.__context3D;
-						var rect = openfl_geom_Rectangle.__pool.get();
-						rect.setTo(0,0,this.get_width(),this.get_height());
-						renderer.__pushMaskRect(rect,this.__renderTransform);
-						var color = this.opaqueBackground;
-						context.clear((color >>> 16 & 255) / 255,(color >>> 8 & 255) / 255,(color & 255) / 255,1,0,0,1);
-						renderer.__popMaskRect();
-						renderer.__popMaskObject(this);
-						openfl_geom_Rectangle.__pool.release(rect);
-					}
-					if(this.__graphics != null) {
-						openfl__$internal_renderer_context3D_Context3DShape.render(this,renderer);
-					}
-				}
-			}
-			openfl__$internal_renderer_context3D_Context3DBitmap.render(this,renderer);
-		}
-		this.__renderEvent(renderer);
-	}
-	,__renderGLMask: function(renderer) {
-		openfl__$internal_renderer_context3D_Context3DBitmap.renderMask(this,renderer);
-	}
-	,__updateCacheBitmap: function(renderer,force) {
-		if(this.__bitmapData == null || this.__filters == null && renderer.__type == "opengl" && this.__cacheBitmap == null) {
-			return false;
-		}
-		return openfl_display_DisplayObject.prototype.__updateCacheBitmap.call(this,renderer,this.__bitmapData.image != null && this.__bitmapData.image.version != this.__imageVersion);
-	}
-	,get_bitmapData: function() {
-		return this.__bitmapData;
-	}
-	,set_bitmapData: function(value) {
-		this.__bitmapData = value;
-		this.smoothing = false;
-		if(!this.__renderDirty) {
-			this.__renderDirty = true;
-			this.__setParentRenderDirty();
-		}
-		var tmp = this.__filters != null;
-		this.__imageVersion = -1;
-		return this.__bitmapData;
-	}
-	,set_height: function(value) {
-		if(this.__bitmapData != null) {
-			this.set_scaleY(value / this.__bitmapData.height);
-		} else {
-			this.set_scaleY(0);
-		}
-		return value;
-	}
-	,set_width: function(value) {
-		if(this.__bitmapData != null) {
-			this.set_scaleX(value / this.__bitmapData.width);
-		} else {
-			this.set_scaleX(0);
-		}
-		return value;
-	}
-	,__class__: openfl_display_Bitmap
-});
-var aseprite_Frame = function(sprite,frame) {
+var aseprite_Frame = function(index,frameBitmapData,nineSlices,renderWidth,renderHeight,sprite,frame) {
 	this._tags = [];
 	this._layersMap = new haxe_ds_StringMap();
 	this._layers = [];
-	openfl_display_Bitmap.call(this,new openfl_display_BitmapData(sprite.aseprite.header.width,sprite.aseprite.header.height,true,0));
-	this._frame = frame;
-	var _g = 0;
-	var _g1 = sprite.get_layers();
-	while(_g < _g1.length) {
-		var layer = _g1[_g];
-		++_g;
-		var layerDef = { layerChunk : layer, cel : null};
-		this._layers.push(layerDef);
-		var k = layer.name;
-		var _this = this._layersMap;
-		if(__map_reserved[k] != null) {
-			_this.setReserved(k,layerDef);
-		} else {
-			_this.h[k] = layerDef;
-		}
-	}
-	var _g2 = 0;
-	var _g3 = frame.chunks;
-	while(_g2 < _g3.length) {
-		var chunk = _g3[_g2];
-		++_g2;
-		if(chunk.header.type == 8197) {
-			var cel = chunk;
-			if(cel.celType == 1) {
-				var tmp = sprite.get_frames()[cel.linkedFrame].get_layers();
-				this._layers[cel.layerIndex].cel = tmp[cel.layerIndex].cel;
+	if(frameBitmapData != null) {
+		this.bitmapData = frameBitmapData;
+	} else if(nineSlices != null) {
+		this.nineSlices = nineSlices;
+		renderWidth = renderWidth == null ? nineSlices[0][0].width + nineSlices[0][1].width + nineSlices[0][2].width : renderWidth;
+		renderHeight = renderHeight == null ? nineSlices[0][0].height + nineSlices[1][0].height + nineSlices[2][0].height : renderHeight;
+		this.render9Slice(renderWidth,renderHeight);
+	} else {
+		this.bitmapData = new openfl_display_BitmapData(sprite.get_ase().header.width,sprite.get_ase().header.height,true,0);
+		this._frame = frame;
+		var _g = 0;
+		var _g1 = sprite.get_layers();
+		while(_g < _g1.length) {
+			var layer = _g1[_g];
+			++_g;
+			var layerDef = { layerChunk : layer, cel : null};
+			this._layers.push(layerDef);
+			var k = layer.name;
+			var _this = this._layersMap;
+			if(__map_reserved[k] != null) {
+				_this.setReserved(k,layerDef);
 			} else {
-				this._layers[cel.layerIndex].cel = new aseprite_Cel(sprite,cel);
+				_this.h[k] = layerDef;
 			}
 		}
-		var _g21 = 0;
-		var _g31 = this._layers;
-		while(_g21 < _g31.length) {
-			var layer1 = _g31[_g21];
-			++_g21;
-			if(layer1.cel != null && (layer1.layerChunk.flags & 1) != 0) {
-				var blendModes = [10,9,12,11,2,8,10,10,5,10,3,4,10,10,10,10,0,14,10];
-				var blendMode = blendModes[layer1.layerChunk.blendMode];
-				var matrix = new openfl_geom_Matrix();
-				matrix.translate(layer1.cel.get_chunk().xPosition,layer1.cel.get_chunk().yPosition);
-				this.get_bitmapData().lock();
-				this.get_bitmapData().draw(layer1.cel,matrix,null,blendMode);
-				this.get_bitmapData().unlock();
+		var _g2 = 0;
+		var _g3 = frame.chunks;
+		while(_g2 < _g3.length) {
+			var chunk = _g3[_g2];
+			++_g2;
+			if(chunk.header.type == 8197) {
+				var cel = chunk;
+				if(cel.celType == 1) {
+					var tmp = sprite.get_frames()[cel.linkedFrame].get_layers();
+					this._layers[cel.layerIndex].cel = tmp[cel.layerIndex].cel;
+				} else {
+					this._layers[cel.layerIndex].cel = new aseprite_Cel(sprite,cel);
+				}
+			}
+			var _g21 = 0;
+			var _g31 = this._layers;
+			while(_g21 < _g31.length) {
+				var layer1 = _g31[_g21];
+				++_g21;
+				if(layer1.cel != null && (layer1.layerChunk.flags & 1) != 0) {
+					var blendModes = [10,9,12,11,2,8,10,10,5,10,3,4,10,10,10,10,0,14,10];
+					var blendMode = blendModes[layer1.layerChunk.blendMode];
+					var matrix = new openfl_geom_Matrix();
+					matrix.translate(layer1.cel.get_chunk().xPosition,layer1.cel.get_chunk().yPosition);
+					this.bitmapData.lock();
+					this.bitmapData.draw(layer1.cel,matrix,null,blendMode);
+					this.bitmapData.unlock();
+				}
 			}
 		}
 	}
 };
 $hxClasses["aseprite.Frame"] = aseprite_Frame;
 aseprite_Frame.__name__ = "aseprite.Frame";
-aseprite_Frame.__super__ = openfl_display_Bitmap;
-aseprite_Frame.prototype = $extend(openfl_display_Bitmap.prototype,{
-	get_duration: function() {
+aseprite_Frame.prototype = {
+	bitmapData: null
+	,get_duration: function() {
 		return this._frame.header.duration;
 	}
 	,_frame: null
 	,get_frame: function() {
 		return this._frame;
+	}
+	,_index: null
+	,get_index: function() {
+		return this._index;
 	}
 	,_layers: null
 	,get_layers: function() {
@@ -7870,13 +7553,215 @@ aseprite_Frame.prototype = $extend(openfl_display_Bitmap.prototype,{
 	,get_layersMap: function() {
 		return this._layersMap;
 	}
-	,startTime: null
+	,nineSlices: null
 	,_tags: null
 	,get_tags: function() {
 		return this._tags;
 	}
-	,_bitmap: null
+	,_renderWidth: null
+	,_renderHeight: null
+	,copy: function(slice,spriteWidth,spriteHeight) {
+		var copyFrame;
+		if(slice != null) {
+			if(slice.get_chunk().has9Slices) {
+				var this1 = slice.get_nineSliceCache();
+				var key = this.get_index();
+				var nineSlice = this1.h[key];
+				if(nineSlice == null) {
+					nineSlice = aseprite_NineSlice.generate(this.bitmapData,slice.get_firstKey());
+					var this2 = slice.get_nineSliceCache();
+					var k = this.get_index();
+					this2.h[k] = nineSlice;
+				}
+				copyFrame = new aseprite_Frame(this.get_index(),null,nineSlice,spriteWidth,spriteHeight);
+			} else {
+				var this3 = slice.get_bitmapCache();
+				var key1 = this.get_index();
+				var sliceBitmapData = this3.h[key1];
+				if(sliceBitmapData == null) {
+					sliceBitmapData = new openfl_display_BitmapData(slice.get_chunk().sliceKeys[0].width,slice.get_chunk().sliceKeys[0].height);
+					sliceBitmapData.copyPixels(this.bitmapData,new openfl_geom_Rectangle(slice.get_chunk().sliceKeys[0].xOrigin,slice.get_chunk().sliceKeys[0].yOrigin,slice.get_chunk().sliceKeys[0].width,slice.get_chunk().sliceKeys[0].height),new openfl_geom_Point(0,0));
+					var this4 = slice.get_bitmapCache();
+					var k1 = this.get_index();
+					this4.h[k1] = sliceBitmapData;
+				}
+				copyFrame = new aseprite_Frame(this.get_index(),sliceBitmapData);
+			}
+		} else {
+			copyFrame = new aseprite_Frame(this.get_index(),this.bitmapData);
+		}
+		copyFrame._frame = this._frame;
+		copyFrame._layers = this._layers;
+		copyFrame._layersMap = this._layersMap;
+		copyFrame._tags = this._tags;
+		return copyFrame;
+	}
+	,render9Slice: function(renderWidth,renderHeight) {
+		if(!(renderWidth != this._renderWidth || renderHeight != this._renderHeight)) {
+			return;
+		}
+		this._renderWidth = renderWidth;
+		this._renderHeight = renderHeight;
+		if(this.bitmapData != null) {
+			this.bitmapData.dispose();
+			this.bitmapData = null;
+		}
+		var render = new openfl_display_Sprite();
+		var centerWidth = renderWidth - (this.nineSlices[0][0].width + this.nineSlices[0][2].width);
+		var centerHeight = renderHeight - (this.nineSlices[0][0].height + this.nineSlices[2][0].height);
+		var centerX = this.nineSlices[0][0].width;
+		var centerY = this.nineSlices[0][0].height;
+		var xs_0 = 0;
+		var xs_1 = centerX;
+		var xs_2 = centerX + centerWidth;
+		var ys_0 = 0;
+		var ys_1 = centerY;
+		var ys_2 = centerY + centerHeight;
+		var widths_0 = this.nineSlices[0][0].width;
+		var widths_1 = centerWidth;
+		var widths_2 = this.nineSlices[0][2].width;
+		var heights_0 = this.nineSlices[0][0].height;
+		var heights_1 = centerHeight;
+		var heights_2 = this.nineSlices[2][0].height;
+		var sliceRender = new openfl_display_Shape();
+		sliceRender.get_graphics().beginBitmapFill(this.nineSlices[0][0]);
+		sliceRender.get_graphics().drawRect(0,0,widths_0,heights_0);
+		sliceRender.get_graphics().endFill();
+		sliceRender.set_x(xs_0);
+		sliceRender.set_y(ys_0);
+		render.addChild(sliceRender);
+		var sliceRender1 = new openfl_display_Shape();
+		sliceRender1.get_graphics().beginBitmapFill(this.nineSlices[0][1]);
+		sliceRender1.get_graphics().drawRect(0,0,widths_1,heights_0);
+		sliceRender1.get_graphics().endFill();
+		sliceRender1.set_x(xs_1);
+		sliceRender1.set_y(ys_0);
+		render.addChild(sliceRender1);
+		var sliceRender2 = new openfl_display_Shape();
+		sliceRender2.get_graphics().beginBitmapFill(this.nineSlices[0][2]);
+		sliceRender2.get_graphics().drawRect(0,0,widths_2,heights_0);
+		sliceRender2.get_graphics().endFill();
+		sliceRender2.set_x(xs_2);
+		sliceRender2.set_y(ys_0);
+		render.addChild(sliceRender2);
+		var sliceRender3 = new openfl_display_Shape();
+		sliceRender3.get_graphics().beginBitmapFill(this.nineSlices[1][0]);
+		sliceRender3.get_graphics().drawRect(0,0,widths_0,heights_1);
+		sliceRender3.get_graphics().endFill();
+		sliceRender3.set_x(xs_0);
+		sliceRender3.set_y(ys_1);
+		render.addChild(sliceRender3);
+		var sliceRender4 = new openfl_display_Shape();
+		sliceRender4.get_graphics().beginBitmapFill(this.nineSlices[1][1]);
+		sliceRender4.get_graphics().drawRect(0,0,widths_1,heights_1);
+		sliceRender4.get_graphics().endFill();
+		sliceRender4.set_x(xs_1);
+		sliceRender4.set_y(ys_1);
+		render.addChild(sliceRender4);
+		var sliceRender5 = new openfl_display_Shape();
+		sliceRender5.get_graphics().beginBitmapFill(this.nineSlices[1][2]);
+		sliceRender5.get_graphics().drawRect(0,0,widths_2,heights_1);
+		sliceRender5.get_graphics().endFill();
+		sliceRender5.set_x(xs_2);
+		sliceRender5.set_y(ys_1);
+		render.addChild(sliceRender5);
+		var sliceRender6 = new openfl_display_Shape();
+		sliceRender6.get_graphics().beginBitmapFill(this.nineSlices[2][0]);
+		sliceRender6.get_graphics().drawRect(0,0,widths_0,heights_2);
+		sliceRender6.get_graphics().endFill();
+		sliceRender6.set_x(xs_0);
+		sliceRender6.set_y(ys_2);
+		render.addChild(sliceRender6);
+		var sliceRender7 = new openfl_display_Shape();
+		sliceRender7.get_graphics().beginBitmapFill(this.nineSlices[2][1]);
+		sliceRender7.get_graphics().drawRect(0,0,widths_1,heights_2);
+		sliceRender7.get_graphics().endFill();
+		sliceRender7.set_x(xs_1);
+		sliceRender7.set_y(ys_2);
+		render.addChild(sliceRender7);
+		var sliceRender8 = new openfl_display_Shape();
+		sliceRender8.get_graphics().beginBitmapFill(this.nineSlices[2][2]);
+		sliceRender8.get_graphics().drawRect(0,0,widths_2,heights_2);
+		sliceRender8.get_graphics().endFill();
+		sliceRender8.set_x(xs_2);
+		sliceRender8.set_y(ys_2);
+		render.addChild(sliceRender8);
+		this.bitmapData = new openfl_display_BitmapData(renderWidth,renderHeight,true,0);
+		this.bitmapData.draw(render);
+	}
+	,resize: function(newWidth,newHeight) {
+		this.render9Slice(newWidth,newHeight);
+	}
 	,__class__: aseprite_Frame
+};
+var aseprite_NineSlice = function() {
+	openfl_display_Sprite.call(this);
+};
+$hxClasses["aseprite.NineSlice"] = aseprite_NineSlice;
+aseprite_NineSlice.__name__ = "aseprite.NineSlice";
+aseprite_NineSlice.generate = function(bitmapData,sliceKey) {
+	var _g = [];
+	var _g1 = [];
+	_g1.push(null);
+	_g1.push(null);
+	_g1.push(null);
+	_g.push(_g1);
+	var _g11 = [];
+	_g11.push(null);
+	_g11.push(null);
+	_g11.push(null);
+	_g.push(_g11);
+	var _g12 = [];
+	_g12.push(null);
+	_g12.push(null);
+	_g12.push(null);
+	_g.push(_g12);
+	var result = _g;
+	var xs_0 = sliceKey.xOrigin;
+	var xs_1 = sliceKey.xOrigin + sliceKey.xCenter | 0;
+	var xs_2 = (sliceKey.xOrigin + sliceKey.xCenter | 0) + sliceKey.centerWidth | 0;
+	var ys_0 = sliceKey.yOrigin;
+	var ys_1 = sliceKey.yOrigin + sliceKey.yCenter | 0;
+	var ys_2 = (sliceKey.yOrigin + sliceKey.yCenter | 0) + sliceKey.centerHeight | 0;
+	var widths_0 = sliceKey.xCenter;
+	var widths_1 = sliceKey.centerWidth;
+	var widths_2 = sliceKey.width - (sliceKey.xCenter + sliceKey.centerWidth | 0) | 0;
+	var heights_0 = sliceKey.yCenter;
+	var heights_1 = sliceKey.centerHeight;
+	var heights_2 = sliceKey.height - (sliceKey.yCenter + sliceKey.centerHeight | 0) | 0;
+	var zeroPoint = new openfl_geom_Point(0,0);
+	var slice = new openfl_display_BitmapData(widths_0,heights_0);
+	slice.copyPixels(bitmapData,new openfl_geom_Rectangle(xs_0,ys_0,widths_0,heights_0),zeroPoint);
+	result[0][0] = slice;
+	var slice1 = new openfl_display_BitmapData(widths_1,heights_0);
+	slice1.copyPixels(bitmapData,new openfl_geom_Rectangle(xs_1,ys_0,widths_1,heights_0),zeroPoint);
+	result[0][1] = slice1;
+	var slice2 = new openfl_display_BitmapData(widths_2,heights_0);
+	slice2.copyPixels(bitmapData,new openfl_geom_Rectangle(xs_2,ys_0,widths_2,heights_0),zeroPoint);
+	result[0][2] = slice2;
+	var slice3 = new openfl_display_BitmapData(widths_0,heights_1);
+	slice3.copyPixels(bitmapData,new openfl_geom_Rectangle(xs_0,ys_1,widths_0,heights_1),zeroPoint);
+	result[1][0] = slice3;
+	var slice4 = new openfl_display_BitmapData(widths_1,heights_1);
+	slice4.copyPixels(bitmapData,new openfl_geom_Rectangle(xs_1,ys_1,widths_1,heights_1),zeroPoint);
+	result[1][1] = slice4;
+	var slice5 = new openfl_display_BitmapData(widths_2,heights_1);
+	slice5.copyPixels(bitmapData,new openfl_geom_Rectangle(xs_2,ys_1,widths_2,heights_1),zeroPoint);
+	result[1][2] = slice5;
+	var slice6 = new openfl_display_BitmapData(widths_0,heights_2);
+	slice6.copyPixels(bitmapData,new openfl_geom_Rectangle(xs_0,ys_2,widths_0,heights_2),zeroPoint);
+	result[2][0] = slice6;
+	var slice7 = new openfl_display_BitmapData(widths_1,heights_2);
+	slice7.copyPixels(bitmapData,new openfl_geom_Rectangle(xs_1,ys_2,widths_1,heights_2),zeroPoint);
+	result[2][1] = slice7;
+	var slice8 = new openfl_display_BitmapData(widths_2,heights_2);
+	slice8.copyPixels(bitmapData,new openfl_geom_Rectangle(xs_2,ys_2,widths_2,heights_2),zeroPoint);
+	result[2][2] = slice8;
+	return result;
+};
+aseprite_NineSlice.__super__ = openfl_display_Sprite;
+aseprite_NineSlice.prototype = $extend(openfl_display_Sprite.prototype,{
+	__class__: aseprite_NineSlice
 });
 var aseprite_Palette = function(paletteChunk) {
 	this._entries = new haxe_ds_IntMap();
@@ -7909,14 +7794,33 @@ aseprite_Palette.prototype = {
 	,__class__: aseprite_Palette
 };
 var aseprite_Slice = function(chunk) {
+	this._nineSliceCache = new haxe_ds_IntMap();
+	this._bitmapCache = new haxe_ds_IntMap();
 	this._chunk = chunk;
 };
 $hxClasses["aseprite.Slice"] = aseprite_Slice;
 aseprite_Slice.__name__ = "aseprite.Slice";
 aseprite_Slice.prototype = {
-	_chunk: null
+	_bitmapCache: null
+	,get_bitmapCache: function() {
+		return this._bitmapCache;
+	}
+	,_chunk: null
 	,get_chunk: function() {
 		return this._chunk;
+	}
+	,get_firstKey: function() {
+		return this.get_chunk().sliceKeys[0];
+	}
+	,get_has9Slices: function() {
+		return this.get_chunk().has9Slices;
+	}
+	,get_name: function() {
+		return this._chunk.name;
+	}
+	,_nineSliceCache: null
+	,get_nineSliceCache: function() {
+		return this._nineSliceCache;
 	}
 	,__class__: aseprite_Slice
 };
@@ -26764,7 +26668,7 @@ var lime_utils_AssetCache = function() {
 	this.audio = new haxe_ds_StringMap();
 	this.font = new haxe_ds_StringMap();
 	this.image = new haxe_ds_StringMap();
-	this.version = 470884;
+	this.version = 114277;
 };
 $hxClasses["lime.utils.AssetCache"] = lime_utils_AssetCache;
 lime_utils_AssetCache.__name__ = "lime.utils.AssetCache";
@@ -51570,6 +51474,388 @@ openfl_display_Application.prototype = $extend(lime_app_Application.prototype,{
 		return $window;
 	}
 	,__class__: openfl_display_Application
+});
+var openfl_display_Bitmap = function(bitmapData,pixelSnapping,smoothing) {
+	if(smoothing == null) {
+		smoothing = false;
+	}
+	openfl_display_DisplayObject.call(this);
+	this.__bitmapData = bitmapData;
+	this.pixelSnapping = pixelSnapping;
+	this.smoothing = smoothing;
+	if(pixelSnapping == null) {
+		this.pixelSnapping = 1;
+	}
+};
+$hxClasses["openfl.display.Bitmap"] = openfl_display_Bitmap;
+openfl_display_Bitmap.__name__ = "openfl.display.Bitmap";
+openfl_display_Bitmap.__super__ = openfl_display_DisplayObject;
+openfl_display_Bitmap.prototype = $extend(openfl_display_DisplayObject.prototype,{
+	pixelSnapping: null
+	,smoothing: null
+	,__image: null
+	,__bitmapData: null
+	,__imageVersion: null
+	,__enterFrame: function(deltaTime) {
+		if(this.__bitmapData != null && this.__bitmapData.image != null && this.__bitmapData.image.version != this.__imageVersion) {
+			if(!this.__renderDirty) {
+				this.__renderDirty = true;
+				this.__setParentRenderDirty();
+			}
+		}
+	}
+	,__getBounds: function(rect,matrix) {
+		var bounds = openfl_geom_Rectangle.__pool.get();
+		if(this.__bitmapData != null) {
+			bounds.setTo(0,0,this.__bitmapData.width,this.__bitmapData.height);
+		} else {
+			bounds.setTo(0,0,0,0);
+		}
+		bounds.__transform(bounds,matrix);
+		rect.__expand(bounds.x,bounds.y,bounds.width,bounds.height);
+		openfl_geom_Rectangle.__pool.release(bounds);
+	}
+	,__hitTest: function(x,y,shapeFlag,stack,interactiveOnly,hitObject) {
+		if(!hitObject.get_visible() || this.__isMask || this.__bitmapData == null) {
+			return false;
+		}
+		if(this.get_mask() != null && !this.get_mask().__hitTestMask(x,y)) {
+			return false;
+		}
+		this.__getRenderTransform();
+		var _this = this.__renderTransform;
+		var norm = _this.a * _this.d - _this.b * _this.c;
+		var px = norm == 0 ? -_this.tx : 1.0 / norm * (_this.c * (_this.ty - y) + _this.d * (x - _this.tx));
+		var _this1 = this.__renderTransform;
+		var norm1 = _this1.a * _this1.d - _this1.b * _this1.c;
+		var py = norm1 == 0 ? -_this1.ty : 1.0 / norm1 * (_this1.a * (y - _this1.ty) + _this1.b * (_this1.tx - x));
+		if(px > 0 && py > 0 && px <= this.__bitmapData.width && py <= this.__bitmapData.height) {
+			if(this.__scrollRect != null && !this.__scrollRect.contains(px,py)) {
+				return false;
+			}
+			if(stack != null && !interactiveOnly) {
+				stack.push(hitObject);
+			}
+			return true;
+		}
+		return false;
+	}
+	,__hitTestMask: function(x,y) {
+		if(this.__bitmapData == null) {
+			return false;
+		}
+		this.__getRenderTransform();
+		var _this = this.__renderTransform;
+		var norm = _this.a * _this.d - _this.b * _this.c;
+		var px = norm == 0 ? -_this.tx : 1.0 / norm * (_this.c * (_this.ty - y) + _this.d * (x - _this.tx));
+		var _this1 = this.__renderTransform;
+		var norm1 = _this1.a * _this1.d - _this1.b * _this1.c;
+		var py = norm1 == 0 ? -_this1.ty : 1.0 / norm1 * (_this1.a * (y - _this1.ty) + _this1.b * (_this1.tx - x));
+		if(px > 0 && py > 0 && px <= this.__bitmapData.width && py <= this.__bitmapData.height) {
+			return true;
+		}
+		return false;
+	}
+	,__renderCairo: function(renderer) {
+	}
+	,__renderCairoMask: function(renderer) {
+		renderer.cairo.rectangle(0,0,this.get_width(),this.get_height());
+	}
+	,__renderCanvas: function(renderer) {
+		this.__updateCacheBitmap(renderer,false);
+		if(this.__bitmapData != null && this.__bitmapData.image != null) {
+			this.__imageVersion = this.__bitmapData.image.version;
+		}
+		if(this.__cacheBitmap != null && !this.__isCacheBitmapRender) {
+			var bitmap = this.__cacheBitmap;
+			if(!(!bitmap.__renderable)) {
+				var alpha = renderer.__getAlpha(bitmap.__worldAlpha);
+				if(alpha > 0 && bitmap.__bitmapData != null && bitmap.__bitmapData.__isValid && bitmap.__bitmapData.readable) {
+					var context = renderer.context;
+					renderer.__setBlendMode(bitmap.__worldBlendMode);
+					renderer.__pushMaskObject(bitmap,false);
+					lime__$internal_graphics_ImageCanvasUtil.convertToCanvas(bitmap.__bitmapData.image);
+					context.globalAlpha = alpha;
+					var scrollRect = bitmap.__scrollRect;
+					renderer.setTransform(bitmap.__renderTransform,context);
+					if(!renderer.__allowSmoothing || !bitmap.smoothing) {
+						context.imageSmoothingEnabled = false;
+					}
+					if(scrollRect == null) {
+						context.drawImage(bitmap.__bitmapData.image.get_src(),0,0,bitmap.__bitmapData.image.width,bitmap.__bitmapData.image.height);
+					} else {
+						context.drawImage(bitmap.__bitmapData.image.get_src(),scrollRect.x,scrollRect.y,scrollRect.width,scrollRect.height);
+					}
+					if(!renderer.__allowSmoothing || !bitmap.smoothing) {
+						context.imageSmoothingEnabled = true;
+					}
+					renderer.__popMaskObject(bitmap,false);
+				}
+			}
+		} else {
+			if(!(this.opaqueBackground == null && this.__graphics == null)) {
+				if(!(!this.__renderable)) {
+					var alpha1 = renderer.__getAlpha(this.__worldAlpha);
+					if(!(alpha1 <= 0)) {
+						if(this.opaqueBackground != null && !this.__isCacheBitmapRender && this.get_width() > 0 && this.get_height() > 0) {
+							renderer.__setBlendMode(this.__worldBlendMode);
+							renderer.__pushMaskObject(this);
+							var context1 = renderer.context;
+							renderer.setTransform(this.__renderTransform,context1);
+							var color = this.opaqueBackground;
+							context1.fillStyle = "rgb(" + (color >>> 16 & 255) + "," + (color >>> 8 & 255) + "," + (color & 255) + ")";
+							context1.fillRect(0,0,this.get_width(),this.get_height());
+							renderer.__popMaskObject(this);
+						}
+						if(this.__graphics != null) {
+							if(!(!this.__renderable)) {
+								var alpha2 = renderer.__getAlpha(this.__worldAlpha);
+								if(!(alpha2 <= 0)) {
+									var graphics = this.__graphics;
+									if(graphics != null) {
+										openfl__$internal_renderer_canvas_CanvasGraphics.render(graphics,renderer);
+										var width = graphics.__width;
+										var height = graphics.__height;
+										var canvas = graphics.__canvas;
+										if(canvas != null && graphics.__visible && width >= 1 && height >= 1) {
+											var transform = graphics.__worldTransform;
+											var context2 = renderer.context;
+											var scrollRect1 = this.__scrollRect;
+											var scale9Grid = this.__worldScale9Grid;
+											if(scrollRect1 == null || scrollRect1.width > 0 && scrollRect1.height > 0) {
+												renderer.__setBlendMode(this.__worldBlendMode);
+												renderer.__pushMaskObject(this);
+												context2.globalAlpha = alpha2;
+												if(scale9Grid != null && transform.b == 0 && transform.c == 0) {
+													context2.setTransform(1,0,0,1,transform.tx,transform.ty);
+													var bounds = graphics.__bounds;
+													var scaleX = graphics.__renderTransform.a;
+													var scaleY = graphics.__renderTransform.d;
+													var renderScaleX = transform.a;
+													var renderScaleY = transform.d;
+													var left = Math.max(1,Math.round(scale9Grid.x * scaleX));
+													var top = Math.round(scale9Grid.y * scaleY);
+													var right = Math.max(1,Math.round((bounds.get_right() - scale9Grid.get_right()) * scaleX));
+													var bottom = Math.round((bounds.get_bottom() - scale9Grid.get_bottom()) * scaleY);
+													var centerWidth = Math.round(scale9Grid.width * scaleX);
+													var centerHeight = Math.round(scale9Grid.height * scaleY);
+													var renderLeft = Math.round(scale9Grid.x * renderScaleX);
+													var renderTop = Math.round(scale9Grid.y * renderScaleY);
+													var renderRight = Math.round((bounds.get_right() - scale9Grid.get_right()) * renderScaleX);
+													var renderBottom = Math.round((bounds.get_bottom() - scale9Grid.get_bottom()) * renderScaleY);
+													var renderCenterWidth = Math.round(width * renderScaleX) - renderLeft - renderRight;
+													var renderCenterHeight = Math.round(height * renderScaleY) - renderTop - renderBottom;
+													renderer.applySmoothing(context2,false);
+													if(centerWidth != 0 && centerHeight != 0) {
+														context2.drawImage(canvas,0,0,left,top,0,0,renderLeft,renderTop);
+														context2.drawImage(canvas,left,0,centerWidth,top,renderLeft,0,renderCenterWidth,renderTop);
+														context2.drawImage(canvas,left + centerWidth,0,right,top,renderLeft + renderCenterWidth,0,renderRight,renderTop);
+														context2.drawImage(canvas,0,top,left,centerHeight,0,renderTop,renderLeft,renderCenterHeight);
+														context2.drawImage(canvas,left,top,centerWidth,centerHeight,renderLeft,renderTop,renderCenterWidth,renderCenterHeight);
+														context2.drawImage(canvas,left + centerWidth,top,right,centerHeight,renderLeft + renderCenterWidth,renderTop,renderRight,renderCenterHeight);
+														context2.drawImage(canvas,0,top + centerHeight,left,bottom,0,renderTop + renderCenterHeight,renderLeft,renderBottom);
+														context2.drawImage(canvas,left,top + centerHeight,centerWidth,bottom,renderLeft,renderTop + renderCenterHeight,renderCenterWidth,renderBottom);
+														context2.drawImage(canvas,left + centerWidth,top + centerHeight,right,bottom,renderLeft + renderCenterWidth,renderTop + renderCenterHeight,renderRight,renderBottom);
+													} else if(centerWidth == 0 && centerHeight != 0) {
+														var renderWidth = renderLeft + renderCenterWidth + renderRight;
+														context2.drawImage(canvas,0,0,width,top,0,0,renderWidth,renderTop);
+														context2.drawImage(canvas,0,top,width,centerHeight,0,renderTop,renderWidth,renderCenterHeight);
+														context2.drawImage(canvas,0,top + centerHeight,width,bottom,0,renderTop + renderCenterHeight,renderWidth,renderBottom);
+													} else if(centerHeight == 0 && centerWidth != 0) {
+														var renderHeight = renderTop + renderCenterHeight + renderBottom;
+														context2.drawImage(canvas,0,0,left,height,0,0,renderLeft,renderHeight);
+														context2.drawImage(canvas,left,0,centerWidth,height,renderLeft,0,renderCenterWidth,renderHeight);
+														context2.drawImage(canvas,left + centerWidth,0,right,height,renderLeft + renderCenterWidth,0,renderRight,renderHeight);
+													}
+												} else {
+													renderer.setTransform(transform,context2);
+													if(renderer.__isDOM) {
+														var reverseScale = 1 / renderer.pixelRatio;
+														context2.scale(reverseScale,reverseScale);
+													}
+													context2.drawImage(canvas,0,0,width,height);
+												}
+												renderer.__popMaskObject(this);
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+			if(!(!this.__renderable)) {
+				var alpha3 = renderer.__getAlpha(this.__worldAlpha);
+				if(alpha3 > 0 && this.__bitmapData != null && this.__bitmapData.__isValid && this.__bitmapData.readable) {
+					var context3 = renderer.context;
+					renderer.__setBlendMode(this.__worldBlendMode);
+					renderer.__pushMaskObject(this,false);
+					lime__$internal_graphics_ImageCanvasUtil.convertToCanvas(this.__bitmapData.image);
+					context3.globalAlpha = alpha3;
+					var scrollRect2 = this.__scrollRect;
+					renderer.setTransform(this.__renderTransform,context3);
+					if(!renderer.__allowSmoothing || !this.smoothing) {
+						context3.imageSmoothingEnabled = false;
+					}
+					if(scrollRect2 == null) {
+						context3.drawImage(this.__bitmapData.image.get_src(),0,0,this.__bitmapData.image.width,this.__bitmapData.image.height);
+					} else {
+						context3.drawImage(this.__bitmapData.image.get_src(),scrollRect2.x,scrollRect2.y,scrollRect2.width,scrollRect2.height);
+					}
+					if(!renderer.__allowSmoothing || !this.smoothing) {
+						context3.imageSmoothingEnabled = true;
+					}
+					renderer.__popMaskObject(this,false);
+				}
+			}
+		}
+		this.__renderEvent(renderer);
+	}
+	,__renderCanvasMask: function(renderer) {
+		renderer.context.rect(0,0,this.get_width(),this.get_height());
+	}
+	,__renderDOM: function(renderer) {
+		this.__updateCacheBitmap(renderer,false);
+		if(this.__cacheBitmap != null && !this.__isCacheBitmapRender) {
+			this.__renderDOMClear(renderer);
+			this.__cacheBitmap.stage = this.stage;
+			var bitmap = this.__cacheBitmap;
+			if(bitmap.stage != null && bitmap.__worldVisible && bitmap.__renderable && bitmap.__bitmapData != null && bitmap.__bitmapData.__isValid && bitmap.__bitmapData.readable) {
+				renderer.__pushMaskObject(bitmap);
+				if(bitmap.__bitmapData.image.buffer.__srcImage != null) {
+					openfl__$internal_renderer_dom_DOMBitmap.renderImage(bitmap,renderer);
+				} else {
+					openfl__$internal_renderer_dom_DOMBitmap.renderCanvas(bitmap,renderer);
+				}
+				renderer.__popMaskObject(bitmap);
+			} else {
+				openfl__$internal_renderer_dom_DOMBitmap.clear(bitmap,renderer);
+			}
+		} else {
+			var tmp = this.opaqueBackground != null && !this.__isCacheBitmapRender && this.get_width() > 0 && this.get_height() > 0;
+			var graphics = this.__graphics;
+			if(this.stage != null && this.__worldVisible && this.__renderable && graphics != null) {
+				openfl__$internal_renderer_canvas_CanvasGraphics.render(graphics,renderer.__canvasRenderer);
+				if(graphics.__softwareDirty || this.__worldAlphaChanged || this.__canvas != graphics.__canvas) {
+					if(graphics.__canvas != null) {
+						if(this.__canvas != graphics.__canvas) {
+							if(this.__canvas != null) {
+								renderer.element.removeChild(this.__canvas);
+							}
+							this.__canvas = graphics.__canvas;
+							this.__context = graphics.__context;
+							renderer.__initializeElement(this,this.__canvas);
+						}
+					} else {
+						openfl__$internal_renderer_dom_DOMShape.clear(this,renderer);
+					}
+				}
+				if(this.__canvas != null) {
+					renderer.__pushMaskObject(this);
+					var cacheTransform = this.__renderTransform;
+					this.__renderTransform = graphics.__worldTransform;
+					if(graphics.__transformDirty) {
+						graphics.__transformDirty = false;
+						this.__renderTransformChanged = true;
+					}
+					renderer.__updateClip(this);
+					renderer.__applyStyle(this,true,true,true);
+					this.__renderTransform = cacheTransform;
+					renderer.__popMaskObject(this);
+				}
+			} else {
+				openfl__$internal_renderer_dom_DOMShape.clear(this,renderer);
+			}
+			if(this.stage != null && this.__worldVisible && this.__renderable && this.__bitmapData != null && this.__bitmapData.__isValid && this.__bitmapData.readable) {
+				renderer.__pushMaskObject(this);
+				if(this.__bitmapData.image.buffer.__srcImage != null) {
+					openfl__$internal_renderer_dom_DOMBitmap.renderImage(this,renderer);
+				} else {
+					openfl__$internal_renderer_dom_DOMBitmap.renderCanvas(this,renderer);
+				}
+				renderer.__popMaskObject(this);
+			} else {
+				openfl__$internal_renderer_dom_DOMBitmap.clear(this,renderer);
+			}
+		}
+		this.__renderEvent(renderer);
+	}
+	,__renderDOMClear: function(renderer) {
+		openfl__$internal_renderer_dom_DOMBitmap.clear(this,renderer);
+	}
+	,__renderGL: function(renderer) {
+		this.__updateCacheBitmap(renderer,false);
+		if(this.__bitmapData != null && this.__bitmapData.image != null) {
+			this.__imageVersion = this.__bitmapData.image.version;
+		}
+		if(this.__cacheBitmap != null && !this.__isCacheBitmapRender) {
+			openfl__$internal_renderer_context3D_Context3DBitmap.render(this.__cacheBitmap,renderer);
+		} else {
+			if(!(this.opaqueBackground == null && this.__graphics == null)) {
+				if(!(!this.__renderable || this.__worldAlpha <= 0)) {
+					if(this.opaqueBackground != null && !this.__isCacheBitmapRender && this.get_width() > 0 && this.get_height() > 0) {
+						renderer.__setBlendMode(this.__worldBlendMode);
+						renderer.__pushMaskObject(this);
+						var context = renderer.__context3D;
+						var rect = openfl_geom_Rectangle.__pool.get();
+						rect.setTo(0,0,this.get_width(),this.get_height());
+						renderer.__pushMaskRect(rect,this.__renderTransform);
+						var color = this.opaqueBackground;
+						context.clear((color >>> 16 & 255) / 255,(color >>> 8 & 255) / 255,(color & 255) / 255,1,0,0,1);
+						renderer.__popMaskRect();
+						renderer.__popMaskObject(this);
+						openfl_geom_Rectangle.__pool.release(rect);
+					}
+					if(this.__graphics != null) {
+						openfl__$internal_renderer_context3D_Context3DShape.render(this,renderer);
+					}
+				}
+			}
+			openfl__$internal_renderer_context3D_Context3DBitmap.render(this,renderer);
+		}
+		this.__renderEvent(renderer);
+	}
+	,__renderGLMask: function(renderer) {
+		openfl__$internal_renderer_context3D_Context3DBitmap.renderMask(this,renderer);
+	}
+	,__updateCacheBitmap: function(renderer,force) {
+		if(this.__bitmapData == null || this.__filters == null && renderer.__type == "opengl" && this.__cacheBitmap == null) {
+			return false;
+		}
+		return openfl_display_DisplayObject.prototype.__updateCacheBitmap.call(this,renderer,this.__bitmapData.image != null && this.__bitmapData.image.version != this.__imageVersion);
+	}
+	,get_bitmapData: function() {
+		return this.__bitmapData;
+	}
+	,set_bitmapData: function(value) {
+		this.__bitmapData = value;
+		this.smoothing = false;
+		if(!this.__renderDirty) {
+			this.__renderDirty = true;
+			this.__setParentRenderDirty();
+		}
+		var tmp = this.__filters != null;
+		this.__imageVersion = -1;
+		return this.__bitmapData;
+	}
+	,set_height: function(value) {
+		if(this.__bitmapData != null) {
+			this.set_scaleY(value / this.__bitmapData.height);
+		} else {
+			this.set_scaleY(0);
+		}
+		return value;
+	}
+	,set_width: function(value) {
+		if(this.__bitmapData != null) {
+			this.set_scaleX(value / this.__bitmapData.width);
+		} else {
+			this.set_scaleX(0);
+		}
+		return value;
+	}
+	,__class__: openfl_display_Bitmap
 });
 var openfl_display__$BlendMode_BlendMode_$Impl_$ = {};
 $hxClasses["openfl.display._BlendMode.BlendMode_Impl_"] = openfl_display__$BlendMode_BlendMode_$Impl_$;

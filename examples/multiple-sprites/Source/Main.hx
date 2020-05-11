@@ -2,6 +2,7 @@ package;
 
 import aseprite.Aseprite;
 import openfl.Assets;
+import openfl.Lib;
 import openfl.display.FPS;
 import openfl.display.Sprite;
 import openfl.events.Event;
@@ -20,6 +21,8 @@ class Main extends Sprite {
   var batsNumber:TextField;
 
   var mouseDown:Bool;
+
+  var lastTime:Int;
 
   public function new() {
     super();
@@ -50,6 +53,8 @@ class Main extends Sprite {
 
     scaleX = scaleY = 2;
 
+    addEventListener(Event.ADDED_TO_STAGE,
+      (event:Event) -> lastTime = Lib.getTimer());
     addEventListener(MouseEvent.MOUSE_DOWN,
       (event:MouseEvent) -> mouseDown = true);
     addEventListener(MouseEvent.MOUSE_UP,
@@ -62,8 +67,16 @@ class Main extends Sprite {
   }
 
   function onEnterFrame(event:Event) {
+    var currentTime = Lib.getTimer();
+    var timeDelta:Int = currentTime - lastTime;
+    lastTime = currentTime;
+
+    for (bat in bats) {
+      bat.update(timeDelta);
+    }
+
     if (mouseDown) {
-      var newBat = new Bat(batSprite.spawn());
+      var newBat = new Bat(batSprite.spawn(false));
       newBat.x = mouseX + (-1 + Math.random() * 2) * 32;
       newBat.y = mouseY + (-1 + Math.random() * 2) * 32;
       batsLayer.addChild(newBat);

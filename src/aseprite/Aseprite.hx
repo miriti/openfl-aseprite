@@ -405,13 +405,15 @@ class Aseprite extends Sprite {
   /**
     Create a copy of this sprite bypassing file data parsing by reusing the resources
 
-    @param sliceName Name of the slice to cut from the sprite
-    @param spriteWidth Width of the newly created sprite.
-    @param spriteHeight Height of the newly created sprite.
+    @param sliceName      Name of the slice to cut from the sprite
+    @param spriteWidth    Width of the newly created sprite.
+    @param spriteHeight   Height of the newly created sprite.
+    @param useEnterFrame  Use `ENTER_FRAME` event to advance the animation
   **/
   public function spawn(?sliceName:String, ?spriteWidth:Int,
-      ?spriteHeight:Int):Aseprite {
-    return new Aseprite(this, slices[sliceName], useEnterFrame, spriteWidth,
+      ?spriteHeight:Int, ?useEnterFrame:Null<Bool> = null):Aseprite {
+    return new Aseprite(this, slices[sliceName],
+      useEnterFrame == null ? this.useEnterFrame : useEnterFrame, spriteWidth,
       spriteHeight);
   }
 
@@ -491,8 +493,9 @@ class Aseprite extends Sprite {
         }
       }
 
-      for (frame in ase.frames) {
-        var newFrame:Frame = new Frame(this, frame);
+      for (index in 0...ase.frames.length) {
+        var frame = ase.frames[index];
+        var newFrame:Frame = new Frame(index, this, frame);
         _totalDuration += newFrame.duration;
         _frames.push(newFrame);
       }
