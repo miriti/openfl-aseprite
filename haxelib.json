@@ -4,7 +4,7 @@
   "license": "MIT",
   "tags": ["animation", "openfl", "aseprite"],
   "description": "Load and render sprites and animations in Aseprite format",
-  "version": "1.3.0",
+  "version": "1.3.1",
   "releasenote": "9Slice support and renaming the main class to Aseprite",
   "classPath": "src/",
   "contributors": ["miriti"],

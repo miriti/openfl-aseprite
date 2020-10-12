@@ -41,6 +41,11 @@ class Aseprite extends Sprite {
 
   private var _tags:Map<String, aseprite.Tag> = [];
 
+  public var bitmap(get, never):Bitmap;
+
+  function get_bitmap():Bitmap
+    return _bitmap;
+
   /**
     Direction of the animation:
 
@@ -322,14 +327,16 @@ class Aseprite extends Sprite {
     @param time Time in milliseconds
   **/
   public function advance(time:Int):Aseprite {
-    if (time < 0) // TODO
-      throw 'TODO: time value can be negative';
+    if (_playing) {
+      if (time < 0) // TODO
+        throw 'TODO: time value can be negative';
 
-    _frameTime += time;
+      _frameTime += time;
 
-    while (_frameTime > _frames[currentFrame].duration) {
-      _frameTime -= _frames[currentFrame].duration;
-      nextFrame();
+      while (_frameTime > _frames[currentFrame].duration) {
+        _frameTime -= _frames[currentFrame].duration;
+        nextFrame();
+      }
     }
 
     return this;
@@ -453,9 +460,7 @@ class Aseprite extends Sprite {
   function onEnterFrame(e:Event) {
     var _currentTime:Int = Lib.getTimer();
     var _deltaTime:Int = _currentTime - _lastTime;
-    if (_playing) {
-      advance(_deltaTime);
-    }
+    advance(_deltaTime);
     _lastTime = _currentTime;
   }
 
