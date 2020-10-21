@@ -419,7 +419,7 @@ class Aseprite extends Sprite {
   **/
   public function spawn(?sliceName:String, ?spriteWidth:Int,
       ?spriteHeight:Int, ?useEnterFrame:Null<Bool> = null):Aseprite {
-    return new Aseprite(this, slices[sliceName],
+    return new Aseprite(this, sliceName == null ? null : slices[sliceName],
       useEnterFrame == null ? this.useEnterFrame : useEnterFrame, spriteWidth,
       spriteHeight);
   }
