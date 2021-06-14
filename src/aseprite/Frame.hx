@@ -1,10 +1,7 @@
 package aseprite;
 
 import ase.chunks.CelChunk;
-import ase.chunks.CelType;
-import ase.chunks.ChunkType;
 import ase.chunks.LayerChunk;
-import ase.chunks.LayerFlags;
 import aseprite.Cel;
 import aseprite.NineSlice.NineSliceSlices;
 import openfl.display.BitmapData;
@@ -143,10 +140,10 @@ class Frame {
         }
 
         for (chunk in frame.chunks) {
-          if (chunk.header.type == ChunkType.CEL) {
+          if (chunk.header.type == CEL) {
             var cel:CelChunk = cast chunk;
 
-            if (cel.celType == CelType.LINKED) {
+            if (cel.celType == Linked) {
               _layers[cel.layerIndex].cel = sprite.frames[cel.linkedFrame].layers[cel.layerIndex].cel;
             } else {
               _layers[cel.layerIndex].cel = new Cel(sprite, cel);
@@ -155,7 +152,7 @@ class Frame {
 
           for (layer in _layers) {
             if (layer.cel != null
-              && (layer.layerChunk.flags & LayerFlags.VISIBLE != 0)) {
+              && (layer.layerChunk.flags & Visible != 0)) {
               // TODO: Implement all the blendModes
               var blendModes:Array<BlendMode> = [
                 NORMAL, // 0 - Normal

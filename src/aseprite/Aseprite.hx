@@ -2,7 +2,6 @@ package aseprite;
 
 import ase.AnimationDirection;
 import ase.Ase;
-import ase.chunks.ChunkType;
 import ase.chunks.LayerChunk;
 import ase.chunks.TagsChunk;
 import haxe.io.Bytes;
@@ -469,11 +468,11 @@ class Aseprite extends Sprite {
       _ase = value;
       for (chunk in ase.frames[0].chunks) {
         switch (chunk.header.type) {
-          case ChunkType.LAYER:
+          case LAYER:
             _layers.push(cast chunk);
-          case ChunkType.PALETTE:
+          case PALETTE:
             _palette = new Palette(cast chunk);
-          case ChunkType.TAGS:
+          case TAGS:
             _frameTags = cast chunk;
 
             for (frameTagData in _frameTags.tags) {
@@ -492,9 +491,10 @@ class Aseprite extends Sprite {
                 _tags[frameTagData.tagName] = animationTag;
               }
             }
-          case ChunkType.SLICE:
+          case SLICE:
             var newSlice = new Slice(cast chunk);
             _slices[newSlice.name] = newSlice;
+          case _:
         }
       }
 
